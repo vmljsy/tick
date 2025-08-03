@@ -2,7 +2,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 from .database import get_db
 from .services import time_entry_service, project_service, tag_service
@@ -27,7 +27,7 @@ def generate_report(
     Generates a time tracking report.
     """
     db = next(get_db())
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     
     if start_date:
         start = parse_date_string(start_date)

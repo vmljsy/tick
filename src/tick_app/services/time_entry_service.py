@@ -1,7 +1,7 @@
 from sqlalchemy import func, extract
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, UTC
 
 from .. import models
 
@@ -10,7 +10,7 @@ def start_timer(db: Session, project_id: int, description: Optional[str] = None,
     db_time_entry = models.TimeEntry(
         project_id=project_id,
         description=description,
-        start_time=datetime.utcnow()
+        start_time=datetime.now(UTC)
     )
     db.add(db_time_entry)
     db.commit()
@@ -24,7 +24,7 @@ def stop_timer(db: Session, entry_id: Optional[int] = None) -> Optional[models.T
         db_time_entry = get_current_running_entry(db)
     
     if db_time_entry:
-        db_time_entry.end_time = datetime.utcnow()
+        db_time_entry.end_time = datetime.now(UTC)
         db.commit()
         db.refresh(db_time_entry)
     return db_time_entry
@@ -68,6 +68,7 @@ def update_time_entry(db: Session, entry_id: int, **kwargs) -> Optional[models.T
     if db_time_entry:
         for key, value in kwargs.items():
             setattr(db_time_entry, key, value)
+        db.add(db_time_entry) # Ensure the object is in the session and tracked for changes
         db.commit()
         db.refresh(db_time_entry)
     return db_time_entry
@@ -123,14 +124,16 @@ def generate_report(
     elif group_by == 'tag':
         # This requires joining with the association table and Tag model
         # For now, return empty or raise an error
-        # TODO: Implement tag grouping
         pass
-    else:
-        # Default to no grouping, just sum total duration for the period
-        total_duration = query.with_entities(
-            func.sum(extract('epoch', models.TimeEntry.end_time) - extract('epoch', models.TimeEntry.start_time))
-        ).scalar()
-        if total_duration:
-            report_data.append({'group_key': 'Total', 'total_duration': total_duration})
+    else: # Default to project grouping if an invalid group_by is provided
+        results = query.join(models.Project).group_by(models.Project.id).with_entities(
+            models.Project.name.label('project_name'),
+            func.sum(extract('epoch', models.TimeEntry.end_time) - extract('epoch', models.TimeEntry.start_time)).label('total_duration')
+        ).all()
+        for row in results:
+            report_data.append({
+                'group_key': row.project_name,
+                'total_duration': row.total_duration
+            })
 
     return report_data

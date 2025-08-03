@@ -1,7 +1,7 @@
 from typer.testing import CliRunner
 from src.tick_app.cli import app
 from src.tick_app.services import project_service, time_entry_service
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 def setup_entries(db_session):
     p1 = project_service.create_project(db_session, "ProjectA")
@@ -43,6 +43,7 @@ def test_adjust_entry(cli_runner: CliRunner, db_session):
     assert result.exit_code == 0
     assert f"Time entry {entry.id} has been updated." in result.stdout.strip()
     updated_entry = time_entry_service.get_time_entry_by_id(db_session, entry.id)
+    db_session.refresh(updated_entry) # Explicitly refresh the object
     assert updated_entry.description == "New Description"
     assert (updated_entry.end_time - updated_entry.start_time).total_seconds() == 7200 # 2 hours
 

@@ -9,3 +9,6 @@ os.makedirs(TICK_DATA_DIR, exist_ok=True)
 
 # Define the path to the SQLite database file
 DATABASE_PATH = TICK_DATA_DIR / "tick.db"
+
+# Define the path to the configuration file
+CONFIG_PATH = TICK_DATA_DIR / "config.json"

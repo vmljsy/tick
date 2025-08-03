@@ -1,7 +1,7 @@
 import typer
 from rich.console import Console
 from typing import Optional, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 from .database import init_db, get_db
 from .services import time_entry_service, project_service
@@ -9,11 +9,13 @@ from .utils import format_duration, parse_duration_string
 from .cli_time_entries import app as entry_app
 from .cli_projects import app as project_app
 from .cli_reports import app as report_app
+from .cli_config import app as config_app
 
 app = typer.Typer(rich_markup_mode="markdown")
 app.add_typer(entry_app, name="entry")
 app.add_typer(project_app, name="project")
 app.add_typer(report_app, name="report")
+app.add_typer(config_app, name="config")
 console = Console()
 
 @app.callback()
@@ -80,7 +82,7 @@ def status():
         console.print("No timer is currently running.")
         raise typer.Exit()
     
-    duration = (datetime.utcnow() - running_entry.start_time).total_seconds()
+    duration = (datetime.now(UTC) - running_entry.start_time.replace(tzinfo=UTC)).total_seconds()
     console.print(f"A timer is running for project [bold green]'{running_entry.project.name}'[/bold green].")
     console.print(f"Started at: {running_entry.start_time.strftime('%H:%M:%S')}")
     console.print(f"Current duration: {format_duration(duration)}")
@@ -107,7 +109,7 @@ def log_time(
             raise typer.Exit(code=1)
 
     seconds = parse_duration_string(duration)
-    end_time = datetime.utcnow()
+    end_time = datetime.now(UTC)
     start_time = end_time - timedelta(seconds=seconds)
 
     time_entry_service.log_time(db, project.id, start_time, end_time, description, tags or [])

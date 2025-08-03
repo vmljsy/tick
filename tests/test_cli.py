@@ -1,7 +1,7 @@
 from typer.testing import CliRunner
 from src.tick_app.cli import app
 from src.tick_app.services import project_service, time_entry_service
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 def test_app_help(cli_runner: CliRunner):
     result = cli_runner.invoke(app, ["--help"])
@@ -90,3 +90,69 @@ def test_log_time_new_project(cli_runner: CliRunner, db_session):
     entries = time_entry_service.list_time_entries(db_session, project_id=project.id)
     assert len(entries) == 1
     assert (entries[0].end_time - entries[0].start_time).total_seconds() == 7200 # 2h in seconds
+
+def test_cli_commands_run_without_error(cli_runner: CliRunner, db_session):
+    # Test project add
+    result = cli_runner.invoke(app, ["project", "add", "TestProjectFromCLI"], input="y\n")
+    assert result.exit_code == 0, f"project add failed: {result.stdout}"
+    assert "Project 'TestProjectFromCLI' has been created." in result.stdout
+
+    # Test start timer
+    result = cli_runner.invoke(app, ["start", "TestProjectFromCLI"])
+    assert result.exit_code == 0, f"start failed: {result.stdout}"
+    assert "Timer started for project 'TestProjectFromCLI'" in result.stdout
+
+    # Test status
+    result = cli_runner.invoke(app, ["status"])
+    assert result.exit_code == 0, f"status failed: {result.stdout}"
+    assert "A timer is running for project 'TestProjectFromCLI'" in result.stdout
+
+    # Test stop timer
+    result = cli_runner.invoke(app, ["stop"])
+    assert result.exit_code == 0, f"stop failed: {result.stdout}"
+    assert "Timer stopped for project 'TestProjectFromCLI'." in result.stdout
+
+    # Test log time (new project creation)
+    result = cli_runner.invoke(app, ["log", "AnotherProjectFromCLI", "1h", "-d", "Logged from test"], input="y\n")
+    assert result.exit_code == 0, f"log new project failed: {result.stdout}"
+    assert "Project 'AnotherProjectFromCLI' created." in result.stdout
+    assert "Logged 1h 0m 0s for project 'AnotherProjectFromCLI'." in result.stdout
+
+    # Test project list
+    result = cli_runner.invoke(app, ["project", "list"])
+    assert result.exit_code == 0, f"project list failed: {result.stdout}"
+    assert "TestProjectFromCLI" in result.stdout
+    assert "AnotherProjectFromCLI" in result.stdout
+
+    # Test config set
+    result = cli_runner.invoke(app, ["config", "set", "test_key", "test_value"])
+    assert result.exit_code == 0, f"config set failed: {result.stdout}"
+    assert "Configuration key 'test_key' set to 'test_value'." in result.stdout
+
+    # Test config get
+    result = cli_runner.invoke(app, ["config", "get", "test_key"])
+    assert result.exit_code == 0, f"config get failed: {result.stdout}"
+    assert "Configuration key 'test_key': 'test_value'." in result.stdout
+
+    # Test config list
+    result = cli_runner.invoke(app, ["config", "list"])
+    assert result.exit_code == 0, f"config list failed: {result.stdout}"
+    assert "test_key" in result.stdout
+    assert "test_value" in result.stdout
+
+    # Test config delete
+    result = cli_runner.invoke(app, ["config", "delete", "test_key"])
+    assert result.exit_code == 0, f"config delete failed: {result.stdout}"
+    assert "Configuration key 'test_key' deleted." in result.stdout
+
+    # Test report generate (default grouping)
+    result = cli_runner.invoke(app, ["report", "generate", "--day"])
+    assert result.exit_code == 0, f"report generate --day failed: {result.stdout}"
+    assert "Time Report (Grouped by project)" in result.stdout # Default grouping
+    assert "TestProjectFromCLI" in result.stdout or "AnotherProjectFromCLI" in result.stdout
+
+    # Test report generate (explicit day grouping)
+    result = cli_runner.invoke(app, ["report", "generate", "--day", "--group-by", "day"])
+    assert result.exit_code == 0, f"report generate --day --group-by day failed: {result.stdout}"
+    assert "Time Report (Grouped by day)" in result.stdout
+    assert datetime.now(UTC).strftime("%Y-%m-%d") in result.stdout # Check for current date in report
