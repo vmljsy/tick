@@ -17,8 +17,8 @@
       <tr>
         <td>{{ entry.project.name }}</td>
         <td>{{ entry.description or "" }}</td>
-        <td>{{ entry.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
-        <td>{{ entry.end_time.strftime('%Y-%m-%d %H:%M') if entry.end_time else "Running..." }}</td>
+        <td>{{ convert_utc_to_local(entry.start_time).strftime('%Y-%m-%d %H:%M') }}</td>
+        <td>{{ convert_utc_to_local(entry.end_time).strftime('%Y-%m-%d %H:%M') if entry.end_time else "Running..." }}</td>
         <td>{{ ((entry.end_time - entry.start_time).total_seconds() | int) if entry.end_time else "" }}s</td>
       </tr>
     {% endfor %}

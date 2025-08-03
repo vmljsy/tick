@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from .database import get_db
 from .services import time_entry_service, project_service, tag_service
-from .utils import format_duration, parse_duration_string, get_start_of_day, get_start_of_week, get_start_of_month, parse_date_string
+from .utils import format_duration, parse_duration_string, get_start_of_day, get_start_of_week, get_start_of_month, parse_date_string, convert_utc_to_local, get_current_datetime
 
 app = typer.Typer(rich_markup_mode="markdown", name="entry")
 console = Console()
@@ -26,20 +26,23 @@ def list_logs(
     """
     db = next(get_db())
     start_date, end_date = None, None
-    now = datetime.utcnow()
+    now = get_current_datetime()
 
     if date:
-        start_date = get_start_of_day(parse_date_string(date))
+        start_date = get_start_of_day(parse_date_string(date, as_local=True))
         end_date = start_date + timedelta(days=1)
     elif today:
-        start_date = get_start_of_day(now)
+        start_date = get_start_of_day(parse_date_string(now.strftime("%Y-%m-%d"), as_local=True))
+        end_date = start_date + timedelta(days=1)
     elif yesterday:
-        start_date = get_start_of_day(now - timedelta(days=1))
+        start_date = get_start_of_day(parse_date_string((now - timedelta(days=1)).strftime("%Y-%m-%d"), as_local=True))
         end_date = start_date + timedelta(days=1)
     elif week:
-        start_date = get_start_of_week(now)
+        start_date = get_start_of_week(parse_date_string(now.strftime("%Y-%m-%d"), as_local=True))
+        end_date = start_date + timedelta(days=7)
     elif month:
-        start_date = get_start_of_month(now)
+        start_date = get_start_of_month(parse_date_string(now.strftime("%Y-%m-%d"), as_local=True))
+        end_date = start_date.replace(month=start_date.month % 12 + 1, day=1) - timedelta(days=1)
 
     project_id, tag_id = None, None
     if project_name:
@@ -78,8 +81,8 @@ def list_logs(
             str(entry.id),
             entry.project.name,
             entry.description or "",
-            entry.start_time.strftime("%Y-%m-%d %H:%M"),
-            entry.end_time.strftime("%Y-%m-%d %H:%M") if entry.end_time else "Running...",
+            convert_utc_to_local(entry.start_time).strftime("%Y-%m-%d %H:%M"),
+            convert_utc_to_local(entry.end_time).strftime("%Y-%m-%d %H:%M") if entry.end_time else "Running...",
             format_duration(duration),
         )
     
@@ -110,9 +113,9 @@ def adjust_entry(
     if desc is not None:
         updates["description"] = desc
     if start:
-        updates["start_time"] = parse_date_string(start)
+        updates["start_time"] = parse_date_string(start, as_local=True)
     if end:
-        updates["end_time"] = parse_date_string(end)
+        updates["end_time"] = parse_date_string(end, as_local=True)
 
     if not updates:
         console.print("No changes specified. Use options like --duration, --desc, etc.")
@@ -183,8 +186,8 @@ def show_all_entries(
             str(entry.id),
             entry.project.name if entry.project else "N/A",
             entry.description or "",
-            entry.start_time.strftime("%Y-%m-%d %H:%M"),
-            entry.end_time.strftime("%Y-%m-%d %H:%M") if entry.end_time else "Running...",
+            convert_utc_to_local(entry.start_time).strftime("%Y-%m-%d %H:%M"),
+            convert_utc_to_local(entry.end_time).strftime("%Y-%m-%d %H:%M") if entry.end_time else "Running...",
             format_duration(duration),
         )
     

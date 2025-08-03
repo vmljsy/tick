@@ -1,4 +1,7 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
+import pytz
+
+from src.tick_app.config import get_user_timezone
 
 class ProjectNotFound(Exception):
     pass
@@ -29,15 +32,36 @@ def parse_duration_string(s: str) -> int:
     return total_seconds
 
 def get_current_datetime() -> datetime:
-    return datetime.utcnow()
+    return datetime.now(UTC)
 
-def parse_date_string(s: str) -> datetime:
-    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S"):
+def convert_utc_to_local(dt_utc: datetime) -> datetime:
+    if dt_utc.tzinfo is None: # Assume naive datetime is UTC
+        dt_utc = dt_utc.replace(tzinfo=UTC)
+    local_tz = pytz.timezone(get_user_timezone())
+    return dt_utc.astimezone(local_tz)
+
+def convert_local_to_utc(dt_local: datetime) -> datetime:
+    local_tz = pytz.timezone(get_user_timezone())
+    if dt_local.tzinfo is None: # Assume naive datetime is local
+        dt_local = local_tz.localize(dt_local)
+    return dt_local.astimezone(UTC)
+
+def parse_date_string(s: str, as_local: bool = True) -> datetime:
+    # Try parsing with various formats
+    dt_naive = None
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d", "%Y-%m-%dT%H:%M:%S"):
         try:
-            return datetime.strptime(s, fmt)
+            dt_naive = datetime.strptime(s, fmt)
+            break
         except ValueError:
             continue
-    raise ValueError(f"Unable to parse date string: {s}. Expected format YYYY-MM-DD [HH:MM].")
+    
+    if dt_naive is None:
+        raise ValueError(f"Unable to parse date string: {s}. Expected format YYYY-MM-DD [HH:MM[:SS]].")
+
+    if as_local:
+        return convert_local_to_utc(dt_naive)
+    return dt_naive.replace(tzinfo=UTC) # Return as UTC if not local
 
 def get_start_of_day(dt: datetime) -> datetime:
     return dt.replace(hour=0, minute=0, second=0, microsecond=0)

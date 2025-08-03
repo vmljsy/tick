@@ -1,7 +1,7 @@
-from sqlalchemy import func, extract
+from sqlalchemy import func, extract, Date
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional, Dict, Any
-from datetime import datetime, UTC
+from datetime import datetime, UTC, date
 
 from .. import models
 
@@ -103,12 +103,12 @@ def generate_report(
 
     if group_by == 'day':
         results = query.group_by(func.date(models.TimeEntry.start_time)).with_entities(
-            func.date(models.TimeEntry.start_time).label('date'),
+            func.date(models.TimeEntry.start_time).cast(Date).label('date'),
             func.sum(extract('epoch', models.TimeEntry.end_time) - extract('epoch', models.TimeEntry.start_time)).label('total_duration')
         ).all()
         for row in results:
             report_data.append({
-                'group_key': datetime.strptime(row.date, '%Y-%m-%d').strftime('%Y-%m-%d'),
+                'group_key': row.date,
                 'total_duration': row.total_duration
             })
     elif group_by == 'project':

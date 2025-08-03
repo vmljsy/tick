@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, UTC
 
 from .database import get_db
 from .services import time_entry_service, project_service, tag_service
-from .utils import get_start_of_day, get_start_of_week, get_start_of_month, parse_date_string, format_duration
+from .utils import get_start_of_day, get_start_of_week, get_start_of_month, parse_date_string, format_duration, convert_utc_to_local, get_current_datetime
 
 app = typer.Typer(rich_markup_mode="markdown", name="report")
 console = Console()
@@ -27,36 +27,31 @@ def generate_report(
     Generates a time tracking report.
     """
     db = next(get_db())
-    now = datetime.now(UTC)
+    now = get_current_datetime()
     
     if start_date:
-        start = parse_date_string(start_date)
+        start = parse_date_string(start_date, as_local=True)
     elif day:
-        start = get_start_of_day(now)
+        start = get_start_of_day(parse_date_string(now.strftime("%Y-%m-%d"), as_local=True))
     elif week:
-        start = get_start_of_week(now)
+        start = get_start_of_week(parse_date_string(now.strftime("%Y-%m-%d"), as_local=True))
     elif month:
-        start = get_start_of_month(now)
+        start = get_start_of_month(parse_date_string(now.strftime("%Y-%m-%d"), as_local=True))
     elif year:
-        start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        start = parse_date_string(f"{now.year}-01-01", as_local=True)
     else:
-        start = get_start_of_day(now)
+        start = get_start_of_day(parse_date_string(now.strftime("%Y-%m-%d"), as_local=True))
 
     if end_date:
-        end = parse_date_string(end_date) + timedelta(days=1)
+        end = parse_date_string(end_date, as_local=True) + timedelta(days=1)
     elif day:
-        end = get_start_of_day(now) + timedelta(days=1)
+        end = get_start_of_day(parse_date_string(now.strftime("%Y-%m-%d"), as_local=True)) + timedelta(days=1)
     elif week:
-        end = get_start_of_week(now) + timedelta(weeks=1)
+        end = get_start_of_week(parse_date_string(now.strftime("%Y-%m-%d"), as_local=True)) + timedelta(weeks=1)
     elif month:
-        year_for_next_month = now.year
-        month_for_next_month = now.month + 1
-        if month_for_next_month > 12:
-            month_for_next_month = 1
-            year_for_next_month += 1
-        end = datetime(year_for_next_month, month_for_next_month, 1, 0, 0, 0, 0)
+        end = get_start_of_month(parse_date_string(now.strftime("%Y-%m-%d"), as_local=True)).replace(month=now.month % 12 + 1, day=1)
     elif year:
-        end = datetime(now.year + 1, 1, 1, 0, 0, 0, 0)
+        end = parse_date_string(f"{now.year + 1}-01-01", as_local=True)
     else:
         end = now
 
@@ -90,7 +85,14 @@ def generate_report(
     total_overall_duration = 0
     for row in report_data:
         duration_seconds = row['total_duration']
-        table.add_row(str(row['group_key']), format_duration(duration_seconds))
+        group_key_display = row['group_key']
+        if group_by == 'day':
+            # group_key is a date object, convert it to datetime for timezone conversion
+                    if group_by == 'day':
+            # group_key is a date object, convert it to datetime for timezone conversion
+            group_key_dt = datetime.combine(group_key_display, datetime.min.time())
+            group_key_display = convert_utc_to_local(group_key_dt).strftime('%Y-%m-%d')
+        table.add_row(str(group_key_display), format_duration(duration_seconds))
         total_overall_duration += duration_seconds
     
     table.add_section()

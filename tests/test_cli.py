@@ -2,6 +2,9 @@ from typer.testing import CliRunner
 from src.tick_app.cli import app
 from src.tick_app.services import project_service, time_entry_service
 from datetime import datetime, timedelta, UTC
+import pytz
+from src.tick_app.config import get_user_timezone
+from src.tick_app.utils import convert_utc_to_local
 
 def test_app_help(cli_runner: CliRunner):
     result = cli_runner.invoke(app, ["--help"])
@@ -72,7 +75,7 @@ def test_status_no_running(cli_runner: CliRunner):
 
 def test_log_time(cli_runner: CliRunner, db_session):
     project_service.create_project(db_session, "LoggedProject")
-    result = cli_runner.invoke(app, ["log", "LoggedProject", "1h30m", "-d", "Manual log entry"])
+    result = cli_runner.invoke(app, ["log", "LoggedProject", "--duration", "1h30m", "-d", "Manual log entry"])
     assert result.exit_code == 0
     assert "Logged 1h 30m 0s for project 'LoggedProject'." in result.stdout.strip()
     entries = time_entry_service.list_time_entries(db_session, project_id=project_service.get_project_by_name(db_session, "LoggedProject").id)
@@ -81,7 +84,7 @@ def test_log_time(cli_runner: CliRunner, db_session):
     assert (entries[0].end_time - entries[0].start_time).total_seconds() == 5400 # 1h30m in seconds
 
 def test_log_time_new_project(cli_runner: CliRunner, db_session):
-    result = cli_runner.invoke(app, ["log", "NewLoggedProject", "2h", "-d", "Another log"], input="y\n")
+    result = cli_runner.invoke(app, ["log", "NewLoggedProject", "--duration", "2h", "-d", "Another log"], input="y\n")
     assert result.exit_code == 0
     assert "Project 'NewLoggedProject' created." in result.stdout.strip()
     assert "Logged 2h 0m 0s for project 'NewLoggedProject'." in result.stdout.strip()
@@ -90,6 +93,96 @@ def test_log_time_new_project(cli_runner: CliRunner, db_session):
     entries = time_entry_service.list_time_entries(db_session, project_id=project.id)
     assert len(entries) == 1
     assert (entries[0].end_time - entries[0].start_time).total_seconds() == 7200 # 2h in seconds
+
+def test_config_set_and_get_timezone(cli_runner: CliRunner, db_session):
+    # Set a timezone
+    result = cli_runner.invoke(app, ["config", "set", "timezone", "America/New_York"])
+    assert result.exit_code == 0
+    assert "Configuration key 'timezone' set to 'America/New_York'." in result.stdout
+
+    # Get the timezone
+    result = cli_runner.invoke(app, ["config", "get", "timezone"])
+    assert result.exit_code == 0
+    assert "Configuration key 'timezone': 'America/New_York'." in result.stdout
+
+    # Reset to default (or another timezone)
+    result = cli_runner.invoke(app, ["config", "set", "timezone", "UTC"])
+    assert result.exit_code == 0
+    assert "Configuration key 'timezone' set to 'UTC'." in result.stdout
+
+def test_start_timer_output_timezone_aware(cli_runner: CliRunner, db_session):
+    project_service.create_project(db_session, "TZProject")
+    
+    # Set a specific timezone for testing
+    cli_runner.invoke(app, ["config", "set", "timezone", "America/Los_Angeles"])
+
+    result = cli_runner.invoke(app, ["start", "TZProject"])
+    assert result.exit_code == 0
+    
+    # Get the current time in the configured timezone
+    local_tz = pytz.timezone("America/Los_Angeles")
+    expected_time_str = datetime.now(local_tz).strftime('%H:%M:%S')
+    
+    # Check if the output contains the timezone-aware time
+    assert f"Timer started for project 'TZProject' at {expected_time_str[:5]}" in result.stdout # Check first few chars due to potential second differences
+
+    # Reset timezone
+    cli_runner.invoke(app, ["config", "set", "timezone", "UTC"])
+
+def test_stop_timer_output_timezone_aware(cli_runner: CliRunner, db_session):
+    project = project_service.create_project(db_session, "StopTZProject")
+    time_entry_service.start_timer(db_session, project.id)
+
+    # Set a specific timezone for testing
+    cli_runner.invoke(app, ["config", "set", "timezone", "Europe/Berlin"])
+
+    result = cli_runner.invoke(app, ["stop"])
+    assert result.exit_code == 0
+    assert "Timer stopped for project 'StopTZProject'." in result.stdout
+    assert "Logged" in result.stdout # Check for duration
+
+    # Reset timezone
+    cli_runner.invoke(app, ["config", "set", "timezone", "UTC"])
+
+def test_status_output_timezone_aware(cli_runner: CliRunner, db_session):
+    project = project_service.create_project(db_session, "StatusTZProject")
+    time_entry_service.start_timer(db_session, project.id)
+
+    # Set a specific timezone for testing
+    cli_runner.invoke(app, ["config", "set", "timezone", "Asia/Tokyo"])
+
+    result = cli_runner.invoke(app, ["status"])
+    assert result.exit_code == 0
+    assert "A timer is running for project 'StatusTZProject'." in result.stdout
+    
+    # Get the current time in the configured timezone
+    local_tz = pytz.timezone("Asia/Tokyo")
+    expected_time_str = datetime.now(local_tz).strftime('%H:%M:%S')
+
+    assert f"Started at: {expected_time_str[:7]}" in result.stdout # Check first few chars due to potential second differences
+
+    # Reset timezone
+    cli_runner.invoke(app, ["config", "set", "timezone", "UTC"])
+
+def test_log_time_output_timezone_aware(cli_runner: CliRunner, db_session):
+    project_service.create_project(db_session, "LogTZProject")
+
+    # Set a specific timezone for testing
+    cli_runner.invoke(app, ["config", "set", "timezone", "America/New_York"])
+
+    result = cli_runner.invoke(app, ["log", "LogTZProject", "--duration", "1h"])
+    assert result.exit_code == 0
+    assert "Logged 1h 0m 0s for project 'LogTZProject'." in result.stdout
+
+    # Test with explicit start/end times
+    start_dt_str = "2025-01-01 09:00"
+    end_dt_str = "2025-01-01 10:00"
+    result = cli_runner.invoke(app, ["log", "LogTZProject", "--start", start_dt_str, "--end", end_dt_str])
+    assert result.exit_code == 0
+    assert "Logged 1h 0m 0s for project 'LogTZProject'." in result.stdout
+
+    # Reset timezone
+    cli_runner.invoke(app, ["config", "set", "timezone", "UTC"])
 
 def test_cli_commands_run_without_error(cli_runner: CliRunner, db_session):
     # Test project add
@@ -113,7 +206,7 @@ def test_cli_commands_run_without_error(cli_runner: CliRunner, db_session):
     assert "Timer stopped for project 'TestProjectFromCLI'." in result.stdout
 
     # Test log time (new project creation)
-    result = cli_runner.invoke(app, ["log", "AnotherProjectFromCLI", "1h", "-d", "Logged from test"], input="y\n")
+    result = cli_runner.invoke(app, ["log", "AnotherProjectFromCLI", "--duration", "1h", "-d", "Logged from test"], input="y\n")
     assert result.exit_code == 0, f"log new project failed: {result.stdout}"
     assert "Project 'AnotherProjectFromCLI' created." in result.stdout
     assert "Logged 1h 0m 0s for project 'AnotherProjectFromCLI'." in result.stdout

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, UTC
 
 from .database import init_db, get_db
 from .services import time_entry_service, project_service
-from .utils import format_duration, parse_duration_string
+from .utils import format_duration, parse_duration_string, convert_utc_to_local, convert_local_to_utc, get_current_datetime, parse_date_string
 from .cli_time_entries import app as entry_app
 from .cli_projects import app as project_app
 from .cli_reports import app as report_app
@@ -54,7 +54,7 @@ def start_timer(
             raise typer.Exit(code=1)
 
     time_entry = time_entry_service.start_timer(db, project.id, description, tags or [])
-    console.print(f"Timer started for project [bold green]'{project.name}'[/bold green] at {time_entry.start_time.strftime('%H:%M:%S')}.")
+    console.print(f"Timer started for project [bold green]'{project.name}'[/bold green] at {convert_utc_to_local(time_entry.start_time).strftime('%H:%M:%S')}.")
 
 @app.command("stop")
 def stop_timer():
@@ -67,7 +67,7 @@ def stop_timer():
         console.print("No timer is currently running.")
         raise typer.Exit(code=1)
     
-    duration = (stopped_entry.end_time - stopped_entry.start_time).total_seconds()
+    duration = (convert_utc_to_local(stopped_entry.end_time) - convert_utc_to_local(stopped_entry.start_time)).total_seconds()
     console.print(f"Timer stopped for project [bold green]'{stopped_entry.project.name}'[/bold green].")
     console.print(f"Logged {format_duration(duration)}.")
 
@@ -84,7 +84,7 @@ def status():
     
     duration = (datetime.now(UTC) - running_entry.start_time.replace(tzinfo=UTC)).total_seconds()
     console.print(f"A timer is running for project [bold green]'{running_entry.project.name}'[/bold green].")
-    console.print(f"Started at: {running_entry.start_time.strftime('%H:%M:%S')}")
+    console.print(f"Started at: {convert_utc_to_local(running_entry.start_time).strftime('%H:%M:%S')}")
     console.print(f"Current duration: {format_duration(duration)}")
     if running_entry.description:
         console.print(f"Description: {running_entry.description}")
@@ -92,7 +92,9 @@ def status():
 @app.command("log")
 def log_time(
     project_name: str = typer.Argument(..., help="The name of the project to log time for."),
-    duration: str = typer.Argument(..., help="The duration of the time entry (e.g., '1h30m')."),
+    duration: Optional[str] = typer.Option(None, "--duration", "-D", help="The duration of the time entry (e.g., '1h30m')."),
+    start: Optional[str] = typer.Option(None, "--start", "-s", help="Start time of the entry (YYYY-MM-DD HH:MM)."),
+    end: Optional[str] = typer.Option(None, "--end", "-e", help="End time of the entry (YYYY-MM-DD HH:MM)."),
     description: Optional[str] = typer.Option(None, "--description", "-d", help="A description of the time entry."),
     tags: Optional[List[str]] = typer.Option(None, "--tag", "-t", help="Tags to associate with the time entry.")
 ):
@@ -108,9 +110,27 @@ def log_time(
         else:
             raise typer.Exit(code=1)
 
-    seconds = parse_duration_string(duration)
-    end_time = datetime.now(UTC)
-    start_time = end_time - timedelta(seconds=seconds)
+    if duration and (start or end):
+        console.print("[bold red]Error:[/bold red] Cannot use --duration with --start or --end.")
+        raise typer.Exit(code=1)
+    if (start and not end) or (end and not start):
+        console.print("[bold red]Error:[/bold red] Both --start and --end must be provided if one is used.")
+        raise typer.Exit(code=1)
+
+    if start and end:
+        start_time = parse_date_string(start, as_local=True)
+        end_time = parse_date_string(end, as_local=True)
+        if start_time >= end_time:
+            console.print("[bold red]Error:[/bold red] Start time cannot be after or equal to end time.")
+            raise typer.Exit(code=1)
+        seconds = (end_time - start_time).total_seconds()
+    elif duration:
+        seconds = parse_duration_string(duration)
+        end_time = get_current_datetime()
+        start_time = end_time - timedelta(seconds=seconds)
+    else:
+        console.print("[bold red]Error:[/bold red] Either --duration or both --start and --end must be provided.")
+        raise typer.Exit(code=1)
 
     time_entry_service.log_time(db, project.id, start_time, end_time, description, tags or [])
     console.print(f"Logged {format_duration(seconds)} for project [bold green]'{project.name}'[/bold green].")
