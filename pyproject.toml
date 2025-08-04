@@ -1,0 +1,14 @@
+[project]
+name = "ticktick"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+[project.scripts]
+tick = "tick_app.cli:app"
+
+[tool.setuptools]
+packages = ["tick_app"]
+package-dir = {"" = "src"}

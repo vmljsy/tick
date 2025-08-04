@@ -1,0 +1,2 @@
+[console_scripts]
+tick = tick_app.cli:app
