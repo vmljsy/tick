@@ -5,7 +5,7 @@ from typing import Optional
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 
-from .services.config_service import config_service
+from .services.config_service import config_service, DEFAULT_CONFIGS
 
 app = typer.Typer(rich_markup_mode="markdown", name="config")
 console = Console()
@@ -47,12 +47,14 @@ def get_config(
     """
     if key is None:
         keys = config_service.all().keys()
-        if not keys:
-            console.print("No configuration keys set.")
+        # Also include default keys for selection
+        all_keys = list(set(keys) | set(DEFAULT_CONFIGS.keys()))
+        if not all_keys:
+            console.print("No configuration keys set or available.")
             raise typer.Exit()
         key = inquirer.select(
             message="Select a configuration key to view:",
-            choices=list(keys)
+            choices=all_keys
         ).execute()
 
     value = config_service.get(key)
@@ -65,19 +67,25 @@ def get_config(
 @app.command("list")
 def list_config():
     """
-    Lists all configuration values.
+    Lists all configuration values, including defaults.
     """
-    config_values = config_service.all()
-    if not config_values:
-        console.print("No configuration values set.")
-        return
+    all_set_configs = config_service.all()
 
-    table = Table(title="Configuration")
+    table = Table(title="Configuration Values")
     table.add_column("Key", style="cyan")
     table.add_column("Value", style="green")
+    table.add_column("Default Value", style="yellow")
+    table.add_column("Description", style="dim")
 
-    for key, value in config_values.items():
-        table.add_row(key, str(value))
+    for key, details in DEFAULT_CONFIGS.items():
+        current_value = all_set_configs.get(key, "") # Get set value or empty string
+        default_value = details["value"]
+        description = details["description"]
+        
+        # If current_value is empty, it means it's using the default, so display default in Value column
+        display_value = current_value if current_value != "" else default_value
+
+        table.add_row(key, str(display_value), str(default_value), description)
     
     console.print(table)
 
@@ -90,12 +98,14 @@ def delete_config(
     """
     if key is None:
         keys = config_service.all().keys()
-        if not keys:
-            console.print("No configuration keys set.")
+        # Also include default keys for selection
+        all_keys = list(set(keys) | set(DEFAULT_CONFIGS.keys()))
+        if not all_keys:
+            console.print("No configuration keys set or available.")
             raise typer.Exit()
         key = inquirer.select(
             message="Select a configuration key to delete:",
-            choices=list(keys)
+            choices=all_keys
         ).execute()
 
     if config_service.get(key) is not None:
