@@ -1,6 +1,6 @@
-from pydantic import BaseModel
-from typing import Optional, List
-from datetime import datetime
+from pydantic import BaseModel, RootModel
+from typing import Optional, List, Any
+from datetime import datetime, date
 
 class Tag(BaseModel):
     id: int
@@ -27,3 +27,22 @@ class TimeEntry(BaseModel):
 
     class Config:
         orm_mode = True
+
+# Report Schemas
+class ReportQueryParams(BaseModel):
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    day: bool = False
+    week: bool = False
+    month: bool = False
+    year: bool = False
+    project_name: Optional[str] = None
+    tag_name: Optional[str] = None
+    group_by: str = "project"
+
+class ReportRow(BaseModel):
+    group_key: Any # Can be date or string
+    total_duration: float
+
+class ReportResponse(RootModel):
+    root: List[ReportRow]
