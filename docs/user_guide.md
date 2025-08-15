@@ -172,6 +172,15 @@ tick report --month --group-by day
 *   `--start-date`, `--end-date`: Define a custom date range.
 *   `--project`, `--tag`: Filter the report for a specific project or tag.
 *   `--group-by`: Group data by `project`, `day`, or `tag`.
+*   `--graph`: Displays a bar chart of the report results in the terminal.
+
+### Note for Windows Users
+
+To use the `--graph` feature on Windows, you may need to set an environment variable to ensure your terminal can correctly handle the characters used to draw the graph. You should run the command as follows:
+
+```bash
+set PYTHONIOENCODING=UTF-8 && uv run tick report generate --year --graph
+```
 
 ## 7. Configuration (`tick config`)
 
