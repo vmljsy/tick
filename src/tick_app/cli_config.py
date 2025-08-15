@@ -2,6 +2,8 @@ import typer
 from rich.console import Console
 from rich.table import Table
 from typing import Optional
+from InquirerPy import inquirer
+from InquirerPy.base.control import Choice
 
 from .services.config_service import config_service
 
@@ -10,25 +12,44 @@ console = Console()
 
 @app.command("set")
 def set_config(
-    key: str = typer.Argument(..., help="The configuration key."),
-    value: str = typer.Argument(..., help="The configuration value."),
+    key: Optional[str] = typer.Argument(None, help="The configuration key."),
+    value: Optional[str] = typer.Argument(None, help="The configuration value."),
 ):
     """
     Sets a configuration value.
     """
+    if key is None:
+        key = inquirer.text(message="Enter the configuration key:").execute()
+        if not key:
+            console.print("[bold red]Error:[/bold red] Key cannot be empty.")
+            raise typer.Exit(1)
+    
+    if value is None:
+        value = inquirer.text(message=f"Enter the value for '{key}':").execute()
+
     config_service.set(key, value)
     console.print(f"Configuration key '[bold green]{key}[/bold green]' set to '[bold green]{value}[/bold green]'.")
 
 @app.command("get")
 def get_config(
-    key: str = typer.Argument(..., help="The configuration key."),
+    key: Optional[str] = typer.Argument(None, help="The configuration key."),
 ):
     """
     Gets a configuration value.
     """
+    if key is None:
+        keys = config_service.all().keys()
+        if not keys:
+            console.print("No configuration keys set.")
+            raise typer.Exit()
+        key = inquirer.select(
+            message="Select a configuration key to view:",
+            choices=list(keys)
+        ).execute()
+
     value = config_service.get(key)
     if value is not None:
-        console.print(f"Configuration key '[bold green]{key}[/bold green]': '[bold green]{value}[/bold green]'.")
+        console.print(f"[bold green]{key}[/bold green] = {value}")
     else:
         console.print(f"Configuration key '[bold red]{key}[/bold red]' not found.")
         raise typer.Exit(code=1)
@@ -54,14 +75,27 @@ def list_config():
 
 @app.command("delete")
 def delete_config(
-    key: str = typer.Argument(..., help="The configuration key to delete."),
+    key: Optional[str] = typer.Argument(None, help="The configuration key to delete."),
 ):
     """
     Deletes a configuration key.
     """
+    if key is None:
+        keys = config_service.all().keys()
+        if not keys:
+            console.print("No configuration keys set.")
+            raise typer.Exit()
+        key = inquirer.select(
+            message="Select a configuration key to delete:",
+            choices=list(keys)
+        ).execute()
+
     if config_service.get(key) is not None:
-        config_service.delete(key)
-        console.print(f"Configuration key '[bold green]{key}[/bold green]' deleted.")
+        if inquirer.confirm(message=f"Are you sure you want to delete the key '{key}'?", default=False).execute():
+            config_service.delete(key)
+            console.print(f"Configuration key '[bold green]{key}[/bold green]' deleted.")
+        else:
+            console.print("Deletion cancelled.")
     else:
         console.print(f"Configuration key '[bold red]{key}[/bold red]' not found.")
         raise typer.Exit(code=1)

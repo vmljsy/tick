@@ -4,12 +4,38 @@ from rich.table import Table
 from typing import Optional, List
 from datetime import datetime, timedelta
 
+from InquirerPy import inquirer
+from InquirerPy.base.control import Choice
+
 from .database import get_db
 from .services import time_entry_service, project_service, tag_service
 from .utils import format_duration, parse_duration_string, get_start_of_day, get_start_of_week, get_start_of_month, parse_date_string, convert_utc_to_local, get_current_datetime, convert_local_to_utc
 
 app = typer.Typer(rich_markup_mode="markdown", name="entry")
 console = Console()
+
+def _prompt_for_entry_selection(db) -> Optional[int]:
+    """Prompts the user to select a time entry from a list of recent entries."""
+    entries = time_entry_service.list_time_entries(db, limit=15) # Get last 15 entries
+    if not entries:
+        console.print("[bold yellow]No time entries found.[/bold yellow]")
+        return None
+
+    choices = [
+        Choice(
+            value=entry.id,
+            name=f"{entry.id}: {entry.project.name} - {entry.description or 'No description'} ({format_duration((entry.end_time - entry.start_time).total_seconds())})"
+        )
+        for entry in entries
+    ]
+    
+    entry_id = inquirer.select(
+        message="Select a time entry:",
+        choices=choices,
+        default=None,
+    ).execute()
+    
+    return entry_id
 
 @app.command("logs")
 def list_logs(
@@ -105,7 +131,7 @@ def list_logs(
 
 @app.command("adjust")
 def adjust_entry(
-    entry_id: int = typer.Argument(..., help="The ID of the time entry to adjust."),
+    entry_id: Optional[int] = typer.Argument(None, help="The ID of the time entry to adjust."),
     duration: Optional[str] = typer.Option(None, "--duration", help="New duration (e.g., '1h30m')."),
     desc: Optional[str] = typer.Option(None, "--desc", help="New description."),
     start: Optional[str] = typer.Option(None, "--start", help="New start time (YYYY-MM-DD HH:MM)."),
@@ -115,6 +141,11 @@ def adjust_entry(
     Adjusts the details of a specific time entry.
     """
     db = next(get_db())
+    if entry_id is None:
+        entry_id = _prompt_for_entry_selection(db)
+        if entry_id is None:
+            raise typer.Exit()
+
     entry = time_entry_service.get_time_entry_by_id(db, entry_id)
     if not entry:
         console.print(f"Time entry with ID {entry_id} not found.")
@@ -131,8 +162,28 @@ def adjust_entry(
     if end:
         updates["end_time"] = parse_date_string(end, as_local=True)
 
+    if not any([duration, desc, start, end]):
+        field_to_edit = inquirer.select(
+            message="Which field do you want to edit?",
+            choices=["Description", "Duration", "Start Time", "End Time"],
+        ).execute()
+
+        if field_to_edit == "Description":
+            new_desc = inquirer.text(message="Enter new description:", default=entry.description or "").execute()
+            updates["description"] = new_desc
+        elif field_to_edit == "Duration":
+            new_duration_str = inquirer.text(message="Enter new duration (e.g., 1h 30m):", default=format_duration((entry.end_time - entry.start_time).total_seconds())).execute()
+            seconds = parse_duration_string(new_duration_str)
+            updates["end_time"] = entry.start_time + timedelta(seconds=seconds)
+        elif field_to_edit == "Start Time":
+            new_start_str = inquirer.text(message="Enter new start time (YYYY-MM-DD HH:MM):", default=convert_utc_to_local(entry.start_time).strftime("%Y-%m-%d %H:%M")).execute()
+            updates["start_time"] = parse_date_string(new_start_str, as_local=True)
+        elif field_to_edit == "End Time":
+            new_end_str = inquirer.text(message="Enter new end time (YYYY-MM-DD HH:MM):", default=convert_utc_to_local(entry.end_time).strftime("%Y-%m-%d %H:%M")).execute()
+            updates["end_time"] = parse_date_string(new_end_str, as_local=True)
+
     if not updates:
-        console.print("No changes specified. Use options like --duration, --desc, etc.")
+        console.print("No changes made.")
         raise typer.Exit()
 
     time_entry_service.update_time_entry(db, entry_id, **updates)
@@ -141,17 +192,23 @@ def adjust_entry(
 
 @app.command("delete")
 def delete_entry(
-    entry_id: int = typer.Argument(..., help="The ID of the time entry to delete."),
+    entry_id: Optional[int] = typer.Argument(None, help="The ID of the time entry to delete."),
 ):
     """
     Deletes a specific time entry.
     """
     db = next(get_db())
-    if not time_entry_service.get_time_entry_by_id(db, entry_id):
+    if entry_id is None:
+        entry_id = _prompt_for_entry_selection(db)
+        if entry_id is None:
+            raise typer.Exit()
+
+    entry = time_entry_service.get_time_entry_by_id(db, entry_id)
+    if not entry:
         console.print(f"Time entry with ID {entry_id} not found.")
         raise typer.Exit(1)
 
-    if typer.confirm(f"Are you sure you want to delete time entry {entry_id}?"):
+    if inquirer.confirm(message=f"Are you sure you want to delete time entry {entry.id} ('{entry.project.name}')?", default=False).execute():
         time_entry_service.delete_time_entry(db, entry_id)
         console.print(f"Time entry {entry_id} has been deleted.")
     else:
