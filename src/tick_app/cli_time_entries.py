@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from .database import get_db
 from .services import time_entry_service, project_service, tag_service
-from .utils import format_duration, parse_duration_string, get_start_of_day, get_start_of_week, get_start_of_month, parse_date_string, convert_utc_to_local, get_current_datetime
+from .utils import format_duration, parse_duration_string, get_start_of_day, get_start_of_week, get_start_of_month, parse_date_string, convert_utc_to_local, get_current_datetime, convert_local_to_utc
 
 app = typer.Typer(rich_markup_mode="markdown", name="entry")
 console = Console()
@@ -22,27 +22,41 @@ def list_logs(
     tag_name: Optional[str] = typer.Option(None, "--tag", help="Filter by tag name."),
 ):
     """
-    Lists time entries with various filters.
+    Lists time entries. Defaults to today's entries if no filters are specified.
     """
     db = next(get_db())
     start_date, end_date = None, None
-    now = get_current_datetime()
+    now_utc = get_current_datetime()
+    now_local = convert_utc_to_local(now_utc)
+
+    # If no options are provided, default to today
+    no_filters = not any([date, today, yesterday, week, month, project_name, tag_name])
+    if no_filters:
+        today = True
 
     if date:
-        start_date = get_start_of_day(parse_date_string(date, as_local=True))
+        start_date = parse_date_string(date, as_local=True)
         end_date = start_date + timedelta(days=1)
     elif today:
-        start_date = get_start_of_day(parse_date_string(now.strftime("%Y-%m-%d"), as_local=True))
-        end_date = start_date + timedelta(days=1)
+        local_start_of_day = get_start_of_day(now_local)
+        start_date = convert_local_to_utc(local_start_of_day)
+        end_date = convert_local_to_utc(local_start_of_day + timedelta(days=1))
     elif yesterday:
-        start_date = get_start_of_day(parse_date_string((now - timedelta(days=1)).strftime("%Y-%m-%d"), as_local=True))
-        end_date = start_date + timedelta(days=1)
+        local_start_of_day = get_start_of_day(now_local - timedelta(days=1))
+        start_date = convert_local_to_utc(local_start_of_day)
+        end_date = convert_local_to_utc(local_start_of_day + timedelta(days=1))
     elif week:
-        start_date = get_start_of_week(parse_date_string(now.strftime("%Y-%m-%d"), as_local=True))
-        end_date = start_date + timedelta(days=7)
+        local_start_of_week = get_start_of_week(now_local)
+        start_date = convert_local_to_utc(local_start_of_week)
+        end_date = convert_local_to_utc(local_start_of_week + timedelta(weeks=1))
     elif month:
-        start_date = get_start_of_month(parse_date_string(now.strftime("%Y-%m-%d"), as_local=True))
-        end_date = start_date.replace(month=start_date.month % 12 + 1, day=1) - timedelta(days=1)
+        local_start_of_month = get_start_of_month(now_local)
+        # Correctly calculate the start of the next month
+        next_month_val = local_start_of_month.month % 12 + 1
+        next_year_val = local_start_of_month.year + (1 if local_start_of_month.month == 12 else 0)
+        end_of_month = local_start_of_month.replace(year=next_year_val, month=next_month_val, day=1)
+        start_date = convert_local_to_utc(local_start_of_month)
+        end_date = convert_local_to_utc(end_of_month)
 
     project_id, tag_id = None, None
     if project_name:
