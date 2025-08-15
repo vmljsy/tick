@@ -44,12 +44,14 @@ def _prompt_for_project(db):
     else:
         return project_service.get_project_by_id(db, project_id)
 
-@app.callback()
-def callback():
+@app.callback(invoke_without_command=True)
+def callback(ctx: typer.Context):
     """
     Tick: A command-line time tracking tool.
     """
     init_db()
+    if ctx.invoked_subcommand is None:
+        typer.echo(ctx.get_help())
 
 @app.command("start")
 def start_timer(

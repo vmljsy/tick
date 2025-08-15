@@ -14,6 +14,14 @@ from .utils import format_duration, parse_duration_string, get_start_of_day, get
 app = typer.Typer(rich_markup_mode="markdown", name="entry")
 console = Console()
 
+@app.callback(invoke_without_command=True)
+def main(ctx: typer.Context):
+    """
+    Manage time entries.
+    """
+    if ctx.invoked_subcommand is None:
+        ctx.show_help()
+
 def _prompt_for_entry_selection(db) -> Optional[int]:
     """Prompts the user to select a time entry from a list of recent entries."""
     entries = time_entry_service.list_time_entries(db, limit=15) # Get last 15 entries

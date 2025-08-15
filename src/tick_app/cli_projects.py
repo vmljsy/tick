@@ -11,6 +11,14 @@ from .services import project_service, tag_service
 app = typer.Typer(rich_markup_mode="markdown", name="project")
 console = Console()
 
+@app.callback(invoke_without_command=True)
+def main(ctx: typer.Context):
+    """
+    Manage projects.
+    """
+    if ctx.invoked_subcommand is None:
+        ctx.show_help()
+
 def _get_project(db, project_id_or_name: str):
     try:
         project_id = int(project_id_or_name)

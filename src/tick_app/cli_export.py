@@ -12,6 +12,14 @@ from .utils import format_duration, parse_date_string, get_start_of_day, get_sta
 app = typer.Typer(rich_markup_mode="markdown", name="export", help="Export time tracking data.")
 console = Console()
 
+@app.callback(invoke_without_command=True)
+def main(ctx: typer.Context):
+    """
+    Export time tracking data.
+    """
+    if ctx.invoked_subcommand is None:
+        ctx.show_help()
+
 # Helper function to write output
 def _write_output(output_file: Optional[TextIO], content: str):
     if output_file:

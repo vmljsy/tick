@@ -10,6 +10,14 @@ from .services.config_service import config_service
 app = typer.Typer(rich_markup_mode="markdown", name="config")
 console = Console()
 
+@app.callback(invoke_without_command=True)
+def main(ctx: typer.Context):
+    """
+    Manage configuration settings.
+    """
+    if ctx.invoked_subcommand is None:
+        ctx.show_help()
+
 @app.command("set")
 def set_config(
     key: Optional[str] = typer.Argument(None, help="The configuration key."),
