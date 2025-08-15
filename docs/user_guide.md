@@ -54,13 +54,15 @@ These are the main commands for daily time tracking.
 
 ### `tick start`
 
-Starts a new timer for a project.
+Starts a new timer for a project. If `PROJECT_NAME` is not provided, you will be prompted to select an existing project or create a new one.
 
 ```bash
 tick start "Project Name" -d "What I am working on" -t "tag1" -t "tag2"
+# Or, for interactive project selection:
+tick start
 ```
 
-*   `PROJECT_NAME` (Required): The name of the project.
+*   `PROJECT_NAME` (Optional): The name of the project.
 *   `--description` / `-d`: An optional description of the task.
 *   `--tag` / `-t`: Add one or more tags to the entry.
 
@@ -82,13 +84,15 @@ tick status
 
 ### `tick log`
 
-Logs a completed time entry without using the timer.
+Logs a completed time entry without using the timer. If `PROJECT_NAME` is not provided, you will be prompted to select an existing project or create a new one. If duration details (`--duration`, `--start`, `--end`) are missing, you will be prompted to enter the duration.
 
 ```bash
 tick log "Project Name" --duration "1h30m" -d "Task I forgot to time"
+# Or, for interactive project and duration selection:
+tick log
 ```
 
-*   `PROJECT_NAME` (Required): The name of the project.
+*   `PROJECT_NAME` (Optional): The name of the project.
 *   `--duration` / `-D`: The duration of the entry (e.g., '2h', '45m').
 *   `--start` / `-s`: Specify a precise start time (YYYY-MM-DD HH:MM).
 *   `--end` / `-e`: Specify a precise end time (YYYY-MM-DD HH:MM).
@@ -120,21 +124,25 @@ tick entry logs --project "Project Name"
 
 ### `tick entry adjust`
 
-Modifies an existing time entry.
+Modifies an existing time entry. If `ENTRY_ID` is not provided, you will be prompted to select an entry from a list of recent entries. If no modification options are given, you will be prompted to choose which field to adjust.
 
 ```bash
 tick entry adjust 123 --desc "A more detailed description"
+# Or, for interactive entry and field selection:
+tick entry adjust
 ```
 
-*   `ENTRY_ID` (Required): The ID of the entry to change.
+*   `ENTRY_ID` (Optional): The ID of the entry to change.
 *   `--duration`, `--desc`, `--start`, `--end`: The attribute to modify.
 
 ### `tick entry delete`
 
-Deletes a time entry.
+Deletes a time entry. If `ENTRY_ID` is not provided, you will be prompted to select an entry from a list of recent entries.
 
 ```bash
 tick entry delete 123
+# Or, for interactive entry selection:
+tick entry delete
 ```
 
 ### `tick entry show-all`
@@ -150,11 +158,64 @@ tick entry show-all --tail 5
 
 This command group helps you manage your projects.
 
-*   `tick project list`: Lists all active projects.
-*   `tick project add "New Project"`: Adds a new project.
-*   `tick project edit <ID or Name>`: Edits a project's name or parent.
-*   `tick project archive <ID or Name>`: Archives a project.
-*   `tick project delete <ID or Name>`: Deletes a project.
+### `tick project list`
+
+Lists all projects.
+
+```bash
+tick project list
+```
+
+*   `--archived`: Include archived projects.
+
+### `tick project add`
+
+Adds a new project. If `NAME` is not provided, you will be prompted to enter it.
+
+```bash
+tick project add "New Project" --parent "My Parent Project"
+# Or, for interactive name entry:
+tick project add
+```
+
+*   `NAME` (Optional): The name of the new project.
+*   `--parent`: The name of the parent project.
+
+### `tick project edit`
+
+Edits a project's details. If `PROJECT_ID_OR_NAME` is not provided, you will be prompted to select a project from a list.
+
+```bash
+tick project edit <ID or Name> --name "Renamed Project"
+# Or, for interactive project selection:
+tick project edit
+```
+
+*   `PROJECT_ID_OR_NAME` (Optional): The ID or name of the project to edit.
+*   `--name`: The new name for the project.
+*   `--parent`: The new parent for the project.
+*   `--add-tag`: A tag to add to the project.
+*   `--remove-tag`: A tag to remove from the project.
+
+### `tick project archive`
+
+Archives a project. If `PROJECT_ID_OR_NAME` is not provided, you will be prompted to select a project from a list.
+
+```bash
+tick project archive <ID or Name>
+# Or, for interactive project selection:
+tick project archive
+```
+
+### `tick project delete`
+
+Deletes a project. If `PROJECT_ID_OR_NAME` is not provided, you will be prompted to select a project from a list.
+
+```bash
+tick project delete <ID or Name>
+# Or, for interactive project selection:
+tick project delete
+```
 
 ## 6. Reporting (`tick report`)
 
@@ -182,16 +243,106 @@ To use the `--graph` feature on Windows, you may need to set an environment vari
 set PYTHONIOENCODING=UTF-8 && uv run tick report generate --year --graph
 ```
 
-## 7. Configuration (`tick config`)
+## 7. Exporting Data (`tick export`)
 
-Manage internal settings for `tick`.
+This command group allows you to export various types of time tracking data to different formats.
 
-*   `tick config list`: Shows all current settings.
-*   `tick config get <KEY>`: Retrieves a specific value.
-*   `tick config set <KEY> <VALUE>`: Sets a configuration value.
-*   `tick config delete <KEY>`: Deletes a key.
+### `tick export entries`
 
-## 8. The Web UI
+Exports raw time entries. You can filter entries by date, project, or tag.
+
+```bash
+tick export entries --format csv --output my_entries.csv
+# Export today's entries to JSON and print to stdout:
+tick export entries --today --format json
+```
+
+*   `--format` / `-f`: Output format: `csv` (default), `json`, `txt`.
+*   `--output` / `-o`: Output file path. If not specified, prints to stdout.
+*   `--date`, `--today`, `--yesterday`, `--week`, `--month`: Filter by common timeframes.
+*   `--project`, `--tag`: Filter by project or tag name.
+
+### `tick export projects`
+
+Exports your list of projects.
+
+```bash
+tick export projects --format json --output my_projects.json
+# Export archived projects to text and print to stdout:
+tick export projects --archived --format txt
+```
+
+*   `--format` / `-f`: Output format: `csv` (default), `json`, `txt`.
+*   `--output` / `-o`: Output file path. If not specified, prints to stdout.
+*   `--archived`: Include archived projects in the export.
+
+### `tick export report`
+
+Exports an aggregated time report. This command supports the same filtering and grouping options as `tick report generate`.
+
+```bash
+tick export report --week --group-by project --format csv --output weekly_report.csv
+# Export a monthly report to JSON and print to stdout:
+tick export report --month --format json
+```
+
+*   `--format` / `-f`: Output format: `csv` (default), `json`, `txt`.
+*   `--output` / `-o`: Output file path. If not specified, prints to stdout.
+*   `--day`, `--week`, `--month`, `--year`: Specify the reporting period.
+*   `--start-date`, `--end-date`: Define a custom date range.
+*   `--project`, `--tag`: Filter the report for a specific project or tag.
+*   `--group-by`: Group data by `project`, `day`, or `tag`.
+
+## 8. Configuration (`tick config`)
+
+Manage internal settings for `tick`. If `KEY` or `VALUE` are not provided for `set`, `get`, or `delete` commands, you will be prompted interactively.
+
+### `tick config set`
+
+Sets a configuration value.
+
+```bash
+tick config set my_key my_value
+# Or, for interactive key/value entry:
+tick config set
+```
+
+*   `KEY` (Optional): The configuration key.
+*   `VALUE` (Optional): The configuration value.
+
+### `tick config get`
+
+Gets a configuration value.
+
+```bash
+tick config get my_key
+# Or, for interactive key selection:
+tick config get
+```
+
+*   `KEY` (Optional): The configuration key.
+
+### `tick config list`
+
+Lists all configuration values.
+
+```bash
+tick config list
+```
+
+### `tick config delete`
+
+Deletes a configuration key.
+
+```bash
+tick config delete my_key
+# Or, for interactive key selection:
+tick config delete
+```
+
+*   `KEY` (Optional): The configuration key.
+
+## 9. The Web UI
 
 For a more visual overview, you can use the web interface.
 
@@ -203,7 +354,7 @@ For a more visual overview, you can use the web interface.
 
 The web UI provides a dashboard, a log viewer, and project management tools.
 
-## 9. Database Location
+## 10. Database Location
 
 All your data is stored in a local SQLite database file (`tick.db`) at:
 
