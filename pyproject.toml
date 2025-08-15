@@ -13,6 +13,7 @@ dependencies = [
     "uvicorn[standard]",
     "plotext",
     "python-dotenv",
+    "tzlocal",
 ]
 
 [project.scripts]

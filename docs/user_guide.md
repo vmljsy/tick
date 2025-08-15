@@ -297,6 +297,18 @@ tick export report --month --format json
 
 Manage internal settings for `tick`. If `KEY` or `VALUE` are not provided for `set`, `get`, or `delete` commands, you will be prompted interactively.
 
+### Logging Configuration
+
+`tick` can save logs to a file with rotation. These settings are configurable:
+
+*   `log_file_path`: The absolute path to the log file. Defaults to `~/.tick/.logs/app.log`.
+*   `log_file_max_bytes`: Maximum size of a log file before rotation, in bytes. Defaults to `10485760` (10 MB).
+*   `log_file_backup_count`: Number of backup log files to keep. Defaults to `5`.
+*   `log_level`: The minimum logging level to capture (e.g., `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`). This overrides the `debug_mode` setting for file logging.`
+*   `timezone`: The timezone to use for displaying and logging times (e.g., `America/New_York`, `Europe/London`). Defaults to system local timezone if not set.
+
+To configure, use `tick config set <KEY> <VALUE>`.
+
 ### `tick config set`
 
 Sets a configuration value.

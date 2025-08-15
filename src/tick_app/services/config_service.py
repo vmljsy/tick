@@ -9,6 +9,7 @@ DEFAULT_CONFIGS = {
     "log_file_max_bytes": {"value": "10485760", "description": "Maximum size of a log file before rotation (in bytes)."},
     "log_file_backup_count": {"value": "5", "description": "Number of backup log files to keep."},
     "log_level": {"value": "INFO", "description": "Minimum logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL). Overrides debug_mode for file logging."},
+    "timezone": {"value": None, "description": "The timezone to use for displaying and logging times (e.g., 'America/New_York', 'Europe/London'). Defaults to system local timezone if not set."},
 }
 
 class ConfigService:
