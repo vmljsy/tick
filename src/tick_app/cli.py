@@ -2,6 +2,8 @@ import typer
 from rich.console import Console
 from typing import Optional, List
 from datetime import datetime, timedelta, UTC
+from InquirerPy import inquirer
+from InquirerPy.base.control import Choice
 
 from .database import init_db, get_db
 from .services import time_entry_service, project_service
@@ -18,6 +20,28 @@ app.add_typer(report_app, name="report")
 app.add_typer(config_app, name="config")
 console = Console()
 
+CREATE_NEW_PROJECT_CHOICE = Choice(value=None, name="[Create New Project]")
+
+def _prompt_for_project(db):
+    projects = project_service.list_projects(db)
+    choices = [Choice(value=p.id, name=p.name) for p in projects]
+    choices.append(CREATE_NEW_PROJECT_CHOICE)
+
+    project_id = inquirer.select(
+        message="Select a project:",
+        choices=choices,
+        default=None,
+    ).execute()
+
+    if project_id is None: # Create new project
+        new_project_name = inquirer.text(message="Enter the name for the new project:").execute()
+        if not new_project_name:
+            console.print("[bold red]Error:[/bold red] Project name cannot be empty.")
+            raise typer.Exit(1)
+        return project_service.create_project(db, new_project_name)
+    else:
+        return project_service.get_project_by_id(db, project_id)
+
 @app.callback()
 def callback():
     """
@@ -27,7 +51,7 @@ def callback():
 
 @app.command("start")
 def start_timer(
-    project_name: str = typer.Argument(..., help="The name of the project to start the timer for."),
+    project_name: Optional[str] = typer.Argument(None, help="The name of the project to start the timer for."),
     description: Optional[str] = typer.Option(None, "--description", "-d", help="A description of the time entry."),
     tags: Optional[List[str]] = typer.Option(None, "--tag", "-t", help="Tags to associate with the time entry.")
 ):
@@ -35,18 +59,22 @@ def start_timer(
     Starts a new time entry for a project.
     """
     db = next(get_db())
-    project = project_service.get_project_by_name(db, project_name)
-    if not project:
-        if typer.confirm(f"Project '{project_name}' not found. Do you want to create it?"):
-            project = project_service.create_project(db, project_name)
-            console.print(f"Project '[bold green]{project.name}[/bold green]' created.")
-        else:
-            raise typer.Exit(code=1)
     
+    if project_name:
+        project = project_service.get_project_by_name(db, project_name)
+        if not project:
+            if inquirer.confirm(message=f"Project '{project_name}' not found. Do you want to create it?", default=True).execute():
+                project = project_service.create_project(db, project_name)
+                console.print(f"Project '[bold green]{project.name}[/bold green]' created.")
+            else:
+                raise typer.Exit(code=1)
+    else:
+        project = _prompt_for_project(db)
+
     running_entry = time_entry_service.get_current_running_entry(db)
     if running_entry:
         console.print(f"[bold yellow]Warning:[/bold yellow] A timer is already running for project '{running_entry.project.name}'.")
-        if typer.confirm("Do you want to stop the current timer and start a new one?"):
+        if inquirer.confirm(message="Do you want to stop the current timer and start a new one?", default=True).execute():
             time_entry_service.stop_timer(db, running_entry.id)
             console.print(f"Timer for '{running_entry.project.name}' stopped.")
         else:
@@ -67,7 +95,7 @@ def stop_timer():
         console.print("No timer is currently running.")
         raise typer.Exit(code=1)
     
-    duration = (convert_utc_to_local(stopped_entry.end_time) - convert_utc_to_local(stopped_entry.start_time)).total_seconds()
+    duration = (stopped_entry.end_time - stopped_entry.start_time).total_seconds()
     console.print(f"Timer stopped for project [bold green]'{stopped_entry.project.name}'[/bold green].")
     console.print(f"Logged {format_duration(duration)}.")
 
@@ -82,7 +110,7 @@ def status():
         console.print("No timer is currently running.")
         raise typer.Exit()
     
-    duration = (datetime.now(UTC) - running_entry.start_time.replace(tzinfo=UTC)).total_seconds()
+    duration = (get_current_datetime() - running_entry.start_time).total_seconds()
     console.print(f"A timer is running for project [bold green]'{running_entry.project.name}'[/bold green].")
     console.print(f"Started at: {convert_utc_to_local(running_entry.start_time).strftime('%H:%M:%S')}")
     console.print(f"Current duration: {format_duration(duration)}")
@@ -91,7 +119,7 @@ def status():
 
 @app.command("log")
 def log_time(
-    project_name: str = typer.Argument(..., help="The name of the project to log time for."),
+    project_name: Optional[str] = typer.Argument(None, help="The name of the project to log time for."),
     duration: Optional[str] = typer.Option(None, "--duration", "-D", help="The duration of the time entry (e.g., '1h30m')."),
     start: Optional[str] = typer.Option(None, "--start", "-s", help="Start time of the entry (YYYY-MM-DD HH:MM)."),
     end: Optional[str] = typer.Option(None, "--end", "-e", help="End time of the entry (YYYY-MM-DD HH:MM)."),
@@ -102,13 +130,17 @@ def log_time(
     Logs a completed time entry.
     """
     db = next(get_db())
-    project = project_service.get_project_by_name(db, project_name)
-    if not project:
-        if typer.confirm(f"Project '{project_name}' not found. Do you want to create it?"):
-            project = project_service.create_project(db, project_name)
-            console.print(f"Project '[bold green]{project.name}[/bold green]' created.")
-        else:
-            raise typer.Exit(code=1)
+    
+    if project_name:
+        project = project_service.get_project_by_name(db, project_name)
+        if not project:
+            if inquirer.confirm(message=f"Project '{project_name}' not found. Do you want to create it?", default=True).execute():
+                project = project_service.create_project(db, project_name)
+                console.print(f"Project '[bold green]{project.name}[/bold green]' created.")
+            else:
+                raise typer.Exit(code=1)
+    else:
+        project = _prompt_for_project(db)
 
     if duration and (start or end):
         console.print("[bold red]Error:[/bold red] Cannot use --duration with --start or --end.")
@@ -116,6 +148,12 @@ def log_time(
     if (start and not end) or (end and not start):
         console.print("[bold red]Error:[/bold red] Both --start and --end must be provided if one is used.")
         raise typer.Exit(code=1)
+
+    if not duration and not (start and end):
+        duration = inquirer.text(message="Enter duration (e.g., '1h 30m'):").execute()
+        if not duration:
+            console.print("Operation cancelled.")
+            raise typer.Exit()
 
     if start and end:
         start_time = parse_date_string(start, as_local=True)
@@ -129,7 +167,8 @@ def log_time(
         end_time = get_current_datetime()
         start_time = end_time - timedelta(seconds=seconds)
     else:
-        console.print("[bold red]Error:[/bold red] Either --duration or both --start and --end must be provided.")
+        # This case should not be reached due to the prompt above
+        console.print("[bold red]Error:[/bold red] Duration or start/end times are required.")
         raise typer.Exit(code=1)
 
     time_entry_service.log_time(db, project.id, start_time, end_time, description, tags or [])
