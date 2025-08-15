@@ -3,6 +3,7 @@ from rich.console import Console
 from rich.table import Table
 from typing import Optional
 from datetime import datetime, timedelta, UTC
+import plotext as plt
 
 from .database import get_db
 from .services import time_entry_service, project_service, tag_service
@@ -31,6 +32,7 @@ def generate_report(
     project_name: Optional[str] = typer.Option(None, "--project", help="Filter by project name."),
     tag_name: Optional[str] = typer.Option(None, "--tag", help="Filter by tag name."),
     group_by: str = typer.Option("project", "--group-by", help="Group the report by: 'day', 'project', or 'tag'."),
+    graph: bool = typer.Option(False, "--graph", help="Display a graph of the report."),
 ):
     """
     Generates a time tracking report.
@@ -74,8 +76,6 @@ def generate_report(
     if end is None:
         end = now_utc
 
-    print(f"Debug: Report start={start}, end={end}")
-
     project_id, tag_id = None, None
     if project_name:
         project = project_service.get_project_by_name(db, project_name)
@@ -99,6 +99,27 @@ def generate_report(
         console.print("No data found for the given report criteria.")
         raise typer.Exit()
 
+    # Generate and display graph if requested
+    if graph:
+        labels = []
+        values = []
+        for row in report_data:
+            # Convert duration from seconds to hours for the graph
+            values.append(row['total_duration'] / 3600)
+            group_key_display = row['group_key']
+            if group_by == 'day':
+                group_key_dt = datetime.combine(group_key_display, datetime.min.time())
+                group_key_display = convert_utc_to_local(group_key_dt).strftime('%Y-%m-%d')
+            labels.append(str(group_key_display))
+
+        plt.clf()
+        plt.bar(labels, values)
+        plt.title(f"Time Report by {group_by.capitalize()}")
+        plt.ylabel("Hours")
+        plt.show()
+        console.print() # Add a newline for spacing
+
+    # Display table
     table = Table(title=f"Time Report (Grouped by {group_by})")
     table.add_column("Category", style="cyan")
     table.add_column("Total Duration", style="green")
@@ -108,7 +129,6 @@ def generate_report(
         duration_seconds = row['total_duration']
         group_key_display = row['group_key']
         if group_by == 'day':
-            # group_key is already a date object, convert it to datetime for timezone conversion
             group_key_dt = datetime.combine(group_key_display, datetime.min.time())
             group_key_display = convert_utc_to_local(group_key_dt).strftime('%Y-%m-%d')
         table.add_row(str(group_key_display), format_duration(duration_seconds))
