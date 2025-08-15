@@ -11,14 +11,42 @@
 *   **Time Entry Management:** Log, adjust, and delete individual time entries.
 *   **Reporting:** Generate reports grouped by day or project for insights into your time usage.
 
-## Installation
+## Installation (for End-Users)
 
-To get `tick` up and running on your system, follow these steps:
+To install and run `tick` on any computer with Python, use the `.whl` file created by the build process.
+
+### Prerequisites
+
+*   Python 3.8+ installed on the target machine.
+
+### Steps
+
+1.  **Locate the Build File:**
+    After building the project, find the `.whl` file inside the `dist/` directory (e.g., `dist/ticktick-0.1.0-py3-none-any.whl`).
+
+2.  **Copy the File:**
+    Copy this `.whl` file to the computer where you want to install `tick`.
+
+3.  **Install using `pip`:**
+    Open a terminal or command prompt and run the following command, replacing the filename with the one you copied:
+    ```bash
+    pip install ticktick-0.1.0-py3-none-any.whl
+    ```
+
+4.  **Run the Application:**
+    Once the installation is complete, the `tick` command will be available system-wide. You can now use the CLI as described in the [Usage](#usage) section.
+    ```bash
+    tick --help
+    ```
+
+## Developer Setup
+
+To get `tick` up and running on your system for development, follow these steps:
 
 ### Prerequisites
 
 *   Python 3.8+
-*   `uv` (or `Poetry`/`Rye` if you prefer, but `uv` is used in these instructions)
+*   `uv`
 
 ### Steps
 
@@ -40,7 +68,7 @@ To get `tick` up and running on your system, follow these steps:
     ```bash
     uv pip install -e .
     ```
-    This command installs all necessary packages and makes the `tick` CLI command available.
+    This command installs all necessary packages and makes the `tick` CLI command available for development.
 
 ## Usage
 
