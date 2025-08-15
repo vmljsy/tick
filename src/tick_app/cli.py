@@ -12,12 +12,14 @@ from .cli_time_entries import app as entry_app
 from .cli_projects import app as project_app
 from .cli_reports import app as report_app
 from .cli_config import app as config_app
+from .cli_export import app as export_app
 
 app = typer.Typer(rich_markup_mode="markdown")
 app.add_typer(entry_app, name="entry")
 app.add_typer(project_app, name="project")
 app.add_typer(report_app, name="report")
 app.add_typer(config_app, name="config")
+app.add_typer(export_app, name="export")
 console = Console()
 
 CREATE_NEW_PROJECT_CHOICE = Choice(value=None, name="[Create New Project]")
