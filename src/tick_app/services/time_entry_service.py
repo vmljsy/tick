@@ -1,22 +1,25 @@
-from sqlalchemy import func, extract
+from sqlalchemy import func, extract, Date, Date
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, UTC, date, date
 
 from .. import models
+from ..profiling import profile_time
 
+@profile_time
 def start_timer(db: Session, project_id: int, description: Optional[str] = None, tags: List[str] = []) -> models.TimeEntry:
     # TODO: Handle tags
     db_time_entry = models.TimeEntry(
         project_id=project_id,
         description=description,
-        start_time=datetime.utcnow()
+        start_time=datetime.now(UTC)
     )
     db.add(db_time_entry)
     db.commit()
     db.refresh(db_time_entry)
     return db_time_entry
 
+@profile_time
 def stop_timer(db: Session, entry_id: Optional[int] = None) -> Optional[models.TimeEntry]:
     if entry_id:
         db_time_entry = get_time_entry_by_id(db, entry_id)
@@ -24,11 +27,12 @@ def stop_timer(db: Session, entry_id: Optional[int] = None) -> Optional[models.T
         db_time_entry = get_current_running_entry(db)
     
     if db_time_entry:
-        db_time_entry.end_time = datetime.utcnow()
+        db_time_entry.end_time = datetime.now(UTC)
         db.commit()
         db.refresh(db_time_entry)
     return db_time_entry
 
+@profile_time
 def log_time(db: Session, project_id: int, start_time: datetime, end_time: datetime, description: Optional[str] = None, tags: List[str] = []) -> models.TimeEntry:
     # TODO: Handle tags
     db_time_entry = models.TimeEntry(
@@ -42,9 +46,11 @@ def log_time(db: Session, project_id: int, start_time: datetime, end_time: datet
     db.refresh(db_time_entry)
     return db_time_entry
 
+@profile_time
 def get_current_running_entry(db: Session) -> Optional[models.TimeEntry]:
     return db.query(models.TimeEntry).filter(models.TimeEntry.end_time == None).first()
 
+@profile_time
 def list_time_entries(db: Session, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, project_id: Optional[int] = None, tag_id: Optional[int] = None, limit: Optional[int] = None, offset: Optional[int] = None) -> List[models.TimeEntry]:
     query = db.query(models.TimeEntry).options(joinedload(models.TimeEntry.project))
     if start_date:
@@ -60,18 +66,22 @@ def list_time_entries(db: Session, start_date: Optional[datetime] = None, end_da
         query = query.offset(offset)
     return query.all()
 
+@profile_time
 def get_time_entry_by_id(db: Session, entry_id: int) -> Optional[models.TimeEntry]:
     return db.query(models.TimeEntry).filter(models.TimeEntry.id == entry_id).first()
 
+@profile_time
 def update_time_entry(db: Session, entry_id: int, **kwargs) -> Optional[models.TimeEntry]:
     db_time_entry = get_time_entry_by_id(db, entry_id)
     if db_time_entry:
         for key, value in kwargs.items():
             setattr(db_time_entry, key, value)
+        db.add(db_time_entry) # Ensure the object is in the session and tracked for changes
         db.commit()
         db.refresh(db_time_entry)
     return db_time_entry
 
+@profile_time
 def delete_time_entry(db: Session, entry_id: int) -> bool:
     db_time_entry = get_time_entry_by_id(db, entry_id)
     if db_time_entry:
@@ -80,6 +90,7 @@ def delete_time_entry(db: Session, entry_id: int) -> bool:
         return True
     return False
 
+@profile_time
 def generate_report(
     db: Session,
     start_date: datetime,
@@ -102,12 +113,17 @@ def generate_report(
 
     if group_by == 'day':
         results = query.group_by(func.date(models.TimeEntry.start_time)).with_entities(
-            func.date(models.TimeEntry.start_time).label('date'),
+                        func.date(models.TimeEntry.start_time).label('date'),
             func.sum(extract('epoch', models.TimeEntry.end_time) - extract('epoch', models.TimeEntry.start_time)).label('total_duration')
         ).all()
         for row in results:
+            # Ensure row.date is a date object, even if the DB driver returns a string
+            if isinstance(row.date, str):
+                date_obj = datetime.strptime(row.date, '%Y-%m-%d').date()
+            else:
+                date_obj = row.date
             report_data.append({
-                'group_key': datetime.strptime(row.date, '%Y-%m-%d').strftime('%Y-%m-%d'),
+                'group_key': date_obj,
                 'total_duration': row.total_duration
             })
     elif group_by == 'project':
@@ -123,14 +139,16 @@ def generate_report(
     elif group_by == 'tag':
         # This requires joining with the association table and Tag model
         # For now, return empty or raise an error
-        # TODO: Implement tag grouping
         pass
-    else:
-        # Default to no grouping, just sum total duration for the period
-        total_duration = query.with_entities(
-            func.sum(extract('epoch', models.TimeEntry.end_time) - extract('epoch', models.TimeEntry.start_time))
-        ).scalar()
-        if total_duration:
-            report_data.append({'group_key': 'Total', 'total_duration': total_duration})
+    else: # Default to project grouping if an invalid group_by is provided
+        results = query.join(models.Project).group_by(models.Project.id).with_entities(
+            models.Project.name.label('project_name'),
+            func.sum(extract('epoch', models.TimeEntry.end_time) - extract('epoch', models.TimeEntry.start_time)).label('total_duration')
+        ).all()
+        for row in results:
+            report_data.append({
+                'group_key': row.project_name,
+                'total_duration': row.total_duration
+            })
 
     return report_data

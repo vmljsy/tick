@@ -4,12 +4,38 @@ from rich.table import Table
 from typing import Optional, List
 from datetime import datetime, timedelta
 
+from InquirerPy import inquirer
+from InquirerPy.base.control import Choice
+
 from .database import get_db
 from .services import time_entry_service, project_service, tag_service
-from .utils import format_duration, parse_duration_string, get_start_of_day, get_start_of_week, get_start_of_month, parse_date_string
+from .utils import format_duration, parse_duration_string, get_start_of_day, get_start_of_week, get_start_of_month, parse_date_string, convert_utc_to_local, get_current_datetime, convert_local_to_utc
 
 app = typer.Typer(rich_markup_mode="markdown", name="entry")
 console = Console()
+
+def _prompt_for_entry_selection(db) -> Optional[int]:
+    """Prompts the user to select a time entry from a list of recent entries."""
+    entries = time_entry_service.list_time_entries(db, limit=15) # Get last 15 entries
+    if not entries:
+        console.print("[bold yellow]No time entries found.[/bold yellow]")
+        return None
+
+    choices = [
+        Choice(
+            value=entry.id,
+            name=f"{entry.id}: {entry.project.name} - {entry.description or 'No description'} ({format_duration((entry.end_time - entry.start_time).total_seconds())})"
+        )
+        for entry in entries
+    ]
+    
+    entry_id = inquirer.select(
+        message="Select a time entry:",
+        choices=choices,
+        default=None,
+    ).execute()
+    
+    return entry_id
 
 @app.command("logs")
 def list_logs(
@@ -22,24 +48,41 @@ def list_logs(
     tag_name: Optional[str] = typer.Option(None, "--tag", help="Filter by tag name."),
 ):
     """
-    Lists time entries with various filters.
+    Lists time entries. Defaults to today's entries if no filters are specified.
     """
     db = next(get_db())
     start_date, end_date = None, None
-    now = datetime.utcnow()
+    now_utc = get_current_datetime()
+    now_local = convert_utc_to_local(now_utc)
+
+    # If no options are provided, default to today
+    no_filters = not any([date, today, yesterday, week, month, project_name, tag_name])
+    if no_filters:
+        today = True
 
     if date:
-        start_date = get_start_of_day(parse_date_string(date))
+        start_date = parse_date_string(date, as_local=True)
         end_date = start_date + timedelta(days=1)
     elif today:
-        start_date = get_start_of_day(now)
+        local_start_of_day = get_start_of_day(now_local)
+        start_date = convert_local_to_utc(local_start_of_day)
+        end_date = convert_local_to_utc(local_start_of_day + timedelta(days=1))
     elif yesterday:
-        start_date = get_start_of_day(now - timedelta(days=1))
-        end_date = start_date + timedelta(days=1)
+        local_start_of_day = get_start_of_day(now_local - timedelta(days=1))
+        start_date = convert_local_to_utc(local_start_of_day)
+        end_date = convert_local_to_utc(local_start_of_day + timedelta(days=1))
     elif week:
-        start_date = get_start_of_week(now)
+        local_start_of_week = get_start_of_week(now_local)
+        start_date = convert_local_to_utc(local_start_of_week)
+        end_date = convert_local_to_utc(local_start_of_week + timedelta(weeks=1))
     elif month:
-        start_date = get_start_of_month(now)
+        local_start_of_month = get_start_of_month(now_local)
+        # Correctly calculate the start of the next month
+        next_month_val = local_start_of_month.month % 12 + 1
+        next_year_val = local_start_of_month.year + (1 if local_start_of_month.month == 12 else 0)
+        end_of_month = local_start_of_month.replace(year=next_year_val, month=next_month_val, day=1)
+        start_date = convert_local_to_utc(local_start_of_month)
+        end_date = convert_local_to_utc(end_of_month)
 
     project_id, tag_id = None, None
     if project_name:
@@ -78,8 +121,8 @@ def list_logs(
             str(entry.id),
             entry.project.name,
             entry.description or "",
-            entry.start_time.strftime("%Y-%m-%d %H:%M"),
-            entry.end_time.strftime("%Y-%m-%d %H:%M") if entry.end_time else "Running...",
+            convert_utc_to_local(entry.start_time).strftime("%Y-%m-%d %H:%M"),
+            convert_utc_to_local(entry.end_time).strftime("%Y-%m-%d %H:%M") if entry.end_time else "Running...",
             format_duration(duration),
         )
     
@@ -88,7 +131,7 @@ def list_logs(
 
 @app.command("adjust")
 def adjust_entry(
-    entry_id: int = typer.Argument(..., help="The ID of the time entry to adjust."),
+    entry_id: Optional[int] = typer.Argument(None, help="The ID of the time entry to adjust."),
     duration: Optional[str] = typer.Option(None, "--duration", help="New duration (e.g., '1h30m')."),
     desc: Optional[str] = typer.Option(None, "--desc", help="New description."),
     start: Optional[str] = typer.Option(None, "--start", help="New start time (YYYY-MM-DD HH:MM)."),
@@ -98,6 +141,11 @@ def adjust_entry(
     Adjusts the details of a specific time entry.
     """
     db = next(get_db())
+    if entry_id is None:
+        entry_id = _prompt_for_entry_selection(db)
+        if entry_id is None:
+            raise typer.Exit()
+
     entry = time_entry_service.get_time_entry_by_id(db, entry_id)
     if not entry:
         console.print(f"Time entry with ID {entry_id} not found.")
@@ -110,12 +158,32 @@ def adjust_entry(
     if desc is not None:
         updates["description"] = desc
     if start:
-        updates["start_time"] = parse_date_string(start)
+        updates["start_time"] = parse_date_string(start, as_local=True)
     if end:
-        updates["end_time"] = parse_date_string(end)
+        updates["end_time"] = parse_date_string(end, as_local=True)
+
+    if not any([duration, desc, start, end]):
+        field_to_edit = inquirer.select(
+            message="Which field do you want to edit?",
+            choices=["Description", "Duration", "Start Time", "End Time"],
+        ).execute()
+
+        if field_to_edit == "Description":
+            new_desc = inquirer.text(message="Enter new description:", default=entry.description or "").execute()
+            updates["description"] = new_desc
+        elif field_to_edit == "Duration":
+            new_duration_str = inquirer.text(message="Enter new duration (e.g., 1h 30m):", default=format_duration((entry.end_time - entry.start_time).total_seconds())).execute()
+            seconds = parse_duration_string(new_duration_str)
+            updates["end_time"] = entry.start_time + timedelta(seconds=seconds)
+        elif field_to_edit == "Start Time":
+            new_start_str = inquirer.text(message="Enter new start time (YYYY-MM-DD HH:MM):", default=convert_utc_to_local(entry.start_time).strftime("%Y-%m-%d %H:%M")).execute()
+            updates["start_time"] = parse_date_string(new_start_str, as_local=True)
+        elif field_to_edit == "End Time":
+            new_end_str = inquirer.text(message="Enter new end time (YYYY-MM-DD HH:MM):", default=convert_utc_to_local(entry.end_time).strftime("%Y-%m-%d %H:%M")).execute()
+            updates["end_time"] = parse_date_string(new_end_str, as_local=True)
 
     if not updates:
-        console.print("No changes specified. Use options like --duration, --desc, etc.")
+        console.print("No changes made.")
         raise typer.Exit()
 
     time_entry_service.update_time_entry(db, entry_id, **updates)
@@ -124,17 +192,23 @@ def adjust_entry(
 
 @app.command("delete")
 def delete_entry(
-    entry_id: int = typer.Argument(..., help="The ID of the time entry to delete."),
+    entry_id: Optional[int] = typer.Argument(None, help="The ID of the time entry to delete."),
 ):
     """
     Deletes a specific time entry.
     """
     db = next(get_db())
-    if not time_entry_service.get_time_entry_by_id(db, entry_id):
+    if entry_id is None:
+        entry_id = _prompt_for_entry_selection(db)
+        if entry_id is None:
+            raise typer.Exit()
+
+    entry = time_entry_service.get_time_entry_by_id(db, entry_id)
+    if not entry:
         console.print(f"Time entry with ID {entry_id} not found.")
         raise typer.Exit(1)
 
-    if typer.confirm(f"Are you sure you want to delete time entry {entry_id}?"):
+    if inquirer.confirm(message=f"Are you sure you want to delete time entry {entry.id} ('{entry.project.name}')?", default=False).execute():
         time_entry_service.delete_time_entry(db, entry_id)
         console.print(f"Time entry {entry_id} has been deleted.")
     else:
@@ -183,8 +257,8 @@ def show_all_entries(
             str(entry.id),
             entry.project.name if entry.project else "N/A",
             entry.description or "",
-            entry.start_time.strftime("%Y-%m-%d %H:%M"),
-            entry.end_time.strftime("%Y-%m-%d %H:%M") if entry.end_time else "Running...",
+            convert_utc_to_local(entry.start_time).strftime("%Y-%m-%d %H:%M"),
+            convert_utc_to_local(entry.end_time).strftime("%Y-%m-%d %H:%M") if entry.end_time else "Running...",
             format_duration(duration),
         )
     

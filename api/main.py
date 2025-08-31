@@ -3,9 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy.orm import Session
 
-from src.tick_app.database import SessionLocal, get_db, init_db
-
-
+from src.tick_app.database import SessionLocal, get_db
 
 app = FastAPI()
 

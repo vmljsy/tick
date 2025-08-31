@@ -9,7 +9,7 @@
         <div class="card-body">
           <h5 class="card-title">{{ running_entry.project.name }}</h5>
           <p class="card-text">{{ running_entry.description or "" }}</p>
-          <p class="card-text"><small class="text-muted">Started at: {{ running_entry.start_time.strftime('%H:%M:%S') }}</small></p>
+          <p class="card-text"><small class="text-muted">Started at: {{ convert_utc_to_local(running_entry.start_time).strftime('%H:%M:%S') }}</small></p>
           <form action="/stop-timer" method="post">
             <button type="submit" class="btn btn-danger">Stop Timer</button>
           </form>

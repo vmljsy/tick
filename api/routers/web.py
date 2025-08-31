@@ -6,6 +6,7 @@ from typing import Optional
 
 from src.tick_app.database import get_db
 from src.tick_app.services import project_service, time_entry_service
+from src.tick_app.utils import convert_utc_to_local
 
 router = APIRouter()
 templates = Jinja2Templates(directory="api/templates")
@@ -19,7 +20,8 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         "request": request,
         "running_entry": running_entry,
         "recent_entries": recent_entries,
-        "projects": projects
+        "projects": projects,
+        "convert_utc_to_local": convert_utc_to_local
     })
 
 @router.post("/start-timer", response_class=RedirectResponse)
@@ -35,7 +37,7 @@ def stop_timer_form(db: Session = Depends(get_db)):
 @router.get("/logs", response_class=HTMLResponse)
 def list_logs_web(request: Request, db: Session = Depends(get_db)):
     entries = time_entry_service.list_time_entries(db)
-    return templates.TemplateResponse("logs.html", {"request": request, "entries": entries})
+    return templates.TemplateResponse("logs.html", {"request": request, "entries": entries, "convert_utc_to_local": convert_utc_to_local})
 
 @router.get("/projects", response_class=HTMLResponse)
 def list_projects_web(request: Request, db: Session = Depends(get_db)):

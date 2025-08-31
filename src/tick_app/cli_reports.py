@@ -2,14 +2,24 @@ import typer
 from rich.console import Console
 from rich.table import Table
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
+import plotext as plt
 
 from .database import get_db
 from .services import time_entry_service, project_service, tag_service
-from .utils import get_start_of_day, get_start_of_week, get_start_of_month, parse_date_string, format_duration
+from .utils import get_start_of_day, get_start_of_week, get_start_of_month, parse_date_string, format_duration, convert_utc_to_local, get_current_datetime, convert_local_to_utc
 
-app = typer.Typer(rich_markup_mode="markdown", name="report")
+app = typer.Typer(rich_markup_mode="markdown", name="report", help="Generates time tracking reports.")
 console = Console()
+
+@app.callback(invoke_without_command=True)
+def main(ctx: typer.Context):
+    """
+    Generate a report. Defaults to the current week if no subcommand is called.
+    """
+    if ctx.invoked_subcommand is None:
+        console.print("No subcommand specified. Defaulting to weekly report.")
+        ctx.invoke(generate_report, week=True)
 
 @app.command("generate")
 def generate_report(
@@ -22,43 +32,49 @@ def generate_report(
     project_name: Optional[str] = typer.Option(None, "--project", help="Filter by project name."),
     tag_name: Optional[str] = typer.Option(None, "--tag", help="Filter by tag name."),
     group_by: str = typer.Option("project", "--group-by", help="Group the report by: 'day', 'project', or 'tag'."),
+    graph: bool = typer.Option(False, "--graph", help="Display a graph of the report."),
 ):
     """
     Generates a time tracking report.
     """
     db = next(get_db())
-    now = datetime.utcnow()
-    
-    if start_date:
-        start = parse_date_string(start_date)
-    elif day:
-        start = get_start_of_day(now)
-    elif week:
-        start = get_start_of_week(now)
-    elif month:
-        start = get_start_of_month(now)
-    elif year:
-        start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-    else:
-        start = get_start_of_day(now)
+    now_utc = get_current_datetime() # This is already UTC
+    now_local = convert_utc_to_local(now_utc) # Get current time in local timezone
 
-    if end_date:
-        end = parse_date_string(end_date) + timedelta(days=1)
+    start, end = None, None
+
+    # Determine start date
+    if start_date:
+        start = parse_date_string(start_date, as_local=True)
     elif day:
-        end = get_start_of_day(now) + timedelta(days=1)
+        start = convert_local_to_utc(get_start_of_day(now_local))
     elif week:
-        end = get_start_of_week(now) + timedelta(weeks=1)
+        start = convert_local_to_utc(get_start_of_week(now_local))
     elif month:
-        year_for_next_month = now.year
-        month_for_next_month = now.month + 1
-        if month_for_next_month > 12:
-            month_for_next_month = 1
-            year_for_next_month += 1
-        end = datetime(year_for_next_month, month_for_next_month, 1, 0, 0, 0, 0)
+        start = convert_local_to_utc(get_start_of_month(now_local))
     elif year:
-        end = datetime(now.year + 1, 1, 1, 0, 0, 0, 0)
-    else:
-        end = now
+        start = convert_local_to_utc(now_local.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0))
+    
+    # Determine end date
+    if end_date:
+        end = parse_date_string(end_date, as_local=True) + timedelta(days=1)
+    elif day:
+        end = convert_local_to_utc(get_start_of_day(now_local) + timedelta(days=1))
+    elif week:
+        end = convert_local_to_utc(get_start_of_week(now_local) + timedelta(weeks=1))
+    elif month:
+        # Correctly calculate the start of the next month
+        next_month = now_local.month % 12 + 1
+        next_year = now_local.year + (1 if now_local.month == 12 else 0)
+        end = convert_local_to_utc(now_local.replace(year=next_year, month=next_month, day=1, hour=0, minute=0, second=0, microsecond=0))
+    elif year:
+        end = convert_local_to_utc(now_local.replace(year=now_local.year + 1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0))
+
+    # If no date range is specified at all, default to today for 'generate' command
+    if start is None:
+        start = convert_local_to_utc(get_start_of_day(now_local))
+    if end is None:
+        end = now_utc
 
     project_id, tag_id = None, None
     if project_name:
@@ -83,6 +99,27 @@ def generate_report(
         console.print("No data found for the given report criteria.")
         raise typer.Exit()
 
+    # Generate and display graph if requested
+    if graph:
+        labels = []
+        values = []
+        for row in report_data:
+            # Convert duration from seconds to hours for the graph
+            values.append(row['total_duration'] / 3600)
+            group_key_display = row['group_key']
+            if group_by == 'day':
+                group_key_dt = datetime.combine(group_key_display, datetime.min.time())
+                group_key_display = convert_utc_to_local(group_key_dt).strftime('%Y-%m-%d')
+            labels.append(str(group_key_display))
+
+        plt.clf()
+        plt.bar(labels, values)
+        plt.title(f"Time Report by {group_by.capitalize()}")
+        plt.ylabel("Hours")
+        plt.show()
+        console.print() # Add a newline for spacing
+
+    # Display table
     table = Table(title=f"Time Report (Grouped by {group_by})")
     table.add_column("Category", style="cyan")
     table.add_column("Total Duration", style="green")
@@ -90,7 +127,11 @@ def generate_report(
     total_overall_duration = 0
     for row in report_data:
         duration_seconds = row['total_duration']
-        table.add_row(str(row['group_key']), format_duration(duration_seconds))
+        group_key_display = row['group_key']
+        if group_by == 'day':
+            group_key_dt = datetime.combine(group_key_display, datetime.min.time())
+            group_key_display = convert_utc_to_local(group_key_dt).strftime('%Y-%m-%d')
+        table.add_row(str(group_key_display), format_duration(duration_seconds))
         total_overall_duration += duration_seconds
     
     table.add_section()

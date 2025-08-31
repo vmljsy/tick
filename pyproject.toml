@@ -4,7 +4,16 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "typer[all]",
+    "rich",
+    "sqlalchemy",
+    "inquirerpy",
+    "fastapi",
+    "uvicorn[standard]",
+    "plotext",
+    "python-dotenv",
+]
 
 [project.scripts]
 tick = "tick_app.cli:app"
