@@ -17,5 +17,5 @@ CONFIG_PATH = TICK_DATA_DIR / "config.json"
 DEFAULT_TIMEZONE = "UTC"
 
 def get_user_timezone() -> str:
-    from src.tick_app.services.config_service import config_service
+    from .services.config_service import config_service
     return config_service.get("timezone", DEFAULT_TIMEZONE)

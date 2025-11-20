@@ -1,9 +1,25 @@
 [project]
-name = "ticktick"
+name = "tick-time-tracker"
 version = "0.1.0"
-description = "Add your description here"
+description = "A lightweight CLI time tracking application"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
+keywords = ["time-tracking", "cli", "productivity"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
 dependencies = [
     "typer[all]",
     "rich",
@@ -13,11 +29,24 @@ dependencies = [
     "uvicorn[standard]",
     "plotext",
     "python-dotenv",
+    "pytz",
 ]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/tick"
+Repository = "https://github.com/yourusername/tick"
+Issues = "https://github.com/yourusername/tick/issues"
 
 [project.scripts]
 tick = "tick_app.cli:app"
 
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [tool.setuptools]
 packages = ["tick_app"]
 package-dir = {"" = "src"}
+
+[tool.setuptools.package-data]
+tick_app = ["*.json"]

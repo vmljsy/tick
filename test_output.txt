@@ -1,0 +1,589 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.1, pluggy-1.6.0 -- C:\Users\vimal\OneDrive\Documents\tick\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\vimal\OneDrive\Documents\tick
+configfile: pytest.ini
+plugins: anyio-4.11.0
+collecting ... collected 45 items
+
+tests/services/test_project_service.py::test_create_project PASSED       [  2%]
+tests/services/test_tag_service.py::test_create_tag PASSED               [  4%]
+tests/services/test_time_entry_service.py::test_start_and_stop_timer PASSED [  6%]
+tests/test_cli.py::test_app_help ERROR                                   [  8%]
+tests/test_cli.py::test_start_timer_new_project ERROR                    [ 11%]
+tests/test_cli.py::test_start_timer_existing_project ERROR               [ 13%]
+tests/test_cli.py::test_start_timer_already_running ERROR                [ 15%]
+tests/test_cli.py::test_start_timer_stop_and_start_new ERROR             [ 17%]
+tests/test_cli.py::test_stop_timer ERROR                                 [ 20%]
+tests/test_cli.py::test_stop_timer_no_running ERROR                      [ 22%]
+tests/test_cli.py::test_status_running ERROR                             [ 24%]
+tests/test_cli.py::test_status_no_running ERROR                          [ 26%]
+tests/test_cli.py::test_log_time ERROR                                   [ 28%]
+tests/test_cli.py::test_log_time_new_project ERROR                       [ 31%]
+tests/test_cli.py::test_config_set_and_get_timezone ERROR                [ 33%]
+tests/test_cli.py::test_start_timer_output_timezone_aware ERROR          [ 35%]
+tests/test_cli.py::test_stop_timer_output_timezone_aware ERROR           [ 37%]
+tests/test_cli.py::test_status_output_timezone_aware ERROR               [ 40%]
+tests/test_cli.py::test_log_time_output_timezone_aware ERROR             [ 42%]
+tests/test_cli.py::test_cli_commands_run_without_error ERROR             [ 44%]
+tests/test_cli_config.py::test_config_set_get_list_delete ERROR          [ 46%]
+tests/test_cli_projects.py::test_project_add ERROR                       [ 48%]
+tests/test_cli_projects.py::test_project_add_with_parent ERROR           [ 51%]
+tests/test_cli_projects.py::test_project_list ERROR                      [ 53%]
+tests/test_cli_projects.py::test_project_edit_name ERROR                 [ 55%]
+tests/test_cli_projects.py::test_project_delete ERROR                    [ 57%]
+tests/test_cli_reports.py::test_report_generate_day ERROR                [ 60%]
+tests/test_cli_reports.py::test_report_generate_project_grouping ERROR   [ 62%]
+tests/test_cli_reports.py::test_report_generate_timezone_aware ERROR     [ 64%]
+tests/test_cli_reports.py::test_report_generate_no_data ERROR            [ 66%]
+tests/test_cli_time_entries.py::test_logs_all ERROR                      [ 68%]
+tests/test_cli_time_entries.py::test_logs_output_timezone_aware ERROR    [ 71%]
+tests/test_cli_time_entries.py::test_logs_date_filter_timezone_aware ERROR [ 73%]
+tests/test_cli_time_entries.py::test_logs_filter_date ERROR              [ 75%]
+tests/test_cli_time_entries.py::test_logs_filter_project ERROR           [ 77%]
+tests/test_cli_time_entries.py::test_adjust_entry ERROR                  [ 80%]
+tests/test_cli_time_entries.py::test_adjust_entry_timezone_aware ERROR   [ 82%]
+tests/test_cli_time_entries.py::test_delete_entry ERROR                  [ 84%]
+tests/test_cli_time_entries.py::test_show_all_head ERROR                 [ 86%]
+tests/test_cli_time_entries.py::test_show_all_tail ERROR                 [ 88%]
+tests/test_cli_time_entries.py::test_show_all_head_and_tail_error ERROR  [ 91%]
+tests/test_models.py::test_project_model PASSED                          [ 93%]
+tests/test_models.py::test_time_entry_model PASSED                       [ 95%]
+tests/test_models.py::test_tag_model PASSED                              [ 97%]
+tests/test_utils.py::test_format_duration PASSED                         [100%]
+
+=================================== ERRORS ====================================
+_______________________ ERROR at setup of test_app_help _______________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1400>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AEC3AAD0>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_______________ ERROR at setup of test_start_timer_new_project ________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1010>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AEC3A8B0>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_____________ ERROR at setup of test_start_timer_existing_project _____________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB16A0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED20C50>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_____________ ERROR at setup of test_start_timer_already_running ______________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1D30>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED21150>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+____________ ERROR at setup of test_start_timer_stop_and_start_new ____________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1E80>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED755E0>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+______________________ ERROR at setup of test_stop_timer ______________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1FD0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED777A0>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+________________ ERROR at setup of test_stop_timer_no_running _________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1E80>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED15630>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+____________________ ERROR at setup of test_status_running ____________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1D30>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED17A10>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+__________________ ERROR at setup of test_status_no_running ___________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB16A0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AEC3E820>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_______________________ ERROR at setup of test_log_time _______________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1010>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AEC88E90>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_________________ ERROR at setup of test_log_time_new_project _________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB2120>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AEC89FD0>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_____________ ERROR at setup of test_config_set_and_get_timezone ______________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AD2C57F0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AEBDA0A0>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+__________ ERROR at setup of test_start_timer_output_timezone_aware ___________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AEB87B60>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AEBD8EC0>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+___________ ERROR at setup of test_stop_timer_output_timezone_aware ___________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1010>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AECA9770>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_____________ ERROR at setup of test_status_output_timezone_aware _____________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB16A0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AECDFBB0>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+____________ ERROR at setup of test_log_time_output_timezone_aware ____________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1D30>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED5CCB0>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+____________ ERROR at setup of test_cli_commands_run_without_error ____________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AEB87B60>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AEC748D0>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+______________ ERROR at setup of test_config_set_get_list_delete ______________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AD2C57F0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AEC75150>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_____________________ ERROR at setup of test_project_add ______________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB16A0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6D160>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_______________ ERROR at setup of test_project_add_with_parent ________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1010>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6D390>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_____________________ ERROR at setup of test_project_list _____________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1E80>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6D710>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+__________________ ERROR at setup of test_project_edit_name ___________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AD2C57F0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AEC354E0>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+____________________ ERROR at setup of test_project_delete ____________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AEB87B60>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6D9B0>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_________________ ERROR at setup of test_report_generate_day __________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1010>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6D550>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+___________ ERROR at setup of test_report_generate_project_grouping ___________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB16A0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6E120>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+____________ ERROR at setup of test_report_generate_timezone_aware ____________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1FD0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6E580>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_______________ ERROR at setup of test_report_generate_no_data ________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AEB87B60>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6EB30>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_______________________ ERROR at setup of test_logs_all _______________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AD2C57F0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6D550>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+______________ ERROR at setup of test_logs_output_timezone_aware ______________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB16A0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6D9B0>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+___________ ERROR at setup of test_logs_date_filter_timezone_aware ____________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1010>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6CB40>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+___________________ ERROR at setup of test_logs_filter_date ___________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1400>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6D630>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_________________ ERROR at setup of test_logs_filter_project __________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AD2C57F0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6F460>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_____________________ ERROR at setup of test_adjust_entry _____________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AEB87B60>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6EBA0>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_____________ ERROR at setup of test_adjust_entry_timezone_aware ______________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1010>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6EB30>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_____________________ ERROR at setup of test_delete_entry _____________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB16A0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6D9B0>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+____________________ ERROR at setup of test_show_all_head _____________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AECB1550>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6F930>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+____________________ ERROR at setup of test_show_all_tail _____________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AEB87B60>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6F620>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+_____________ ERROR at setup of test_show_all_head_and_tail_error _____________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x000001D3AD2C57F0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D3AED6DE80>
+
+    @pytest.fixture(name="cli_runner")
+    def cli_runner_fixture(db_session, monkeypatch):
+        from typer.testing import CliRunner
+>       runner = CliRunner(mix_stderr=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CliRunner.__init__() got an unexpected keyword argument 'mix_stderr'
+
+tests\conftest.py:47: TypeError
+=========================== short test summary info ===========================
+ERROR tests/test_cli.py::test_app_help - TypeError: CliRunner.__init__() got ...
+ERROR tests/test_cli.py::test_start_timer_new_project - TypeError: CliRunner....
+ERROR tests/test_cli.py::test_start_timer_existing_project - TypeError: CliRu...
+ERROR tests/test_cli.py::test_start_timer_already_running - TypeError: CliRun...
+ERROR tests/test_cli.py::test_start_timer_stop_and_start_new - TypeError: Cli...
+ERROR tests/test_cli.py::test_stop_timer - TypeError: CliRunner.__init__() go...
+ERROR tests/test_cli.py::test_stop_timer_no_running - TypeError: CliRunner.__...
+ERROR tests/test_cli.py::test_status_running - TypeError: CliRunner.__init__(...
+ERROR tests/test_cli.py::test_status_no_running - TypeError: CliRunner.__init...
+ERROR tests/test_cli.py::test_log_time - TypeError: CliRunner.__init__() got ...
+ERROR tests/test_cli.py::test_log_time_new_project - TypeError: CliRunner.__i...
+ERROR tests/test_cli.py::test_config_set_and_get_timezone - TypeError: CliRun...
+ERROR tests/test_cli.py::test_start_timer_output_timezone_aware - TypeError: ...
+ERROR tests/test_cli.py::test_stop_timer_output_timezone_aware - TypeError: C...
+ERROR tests/test_cli.py::test_status_output_timezone_aware - TypeError: CliRu...
+ERROR tests/test_cli.py::test_log_time_output_timezone_aware - TypeError: Cli...
+ERROR tests/test_cli.py::test_cli_commands_run_without_error - TypeError: Cli...
+ERROR tests/test_cli_config.py::test_config_set_get_list_delete - TypeError: ...
+ERROR tests/test_cli_projects.py::test_project_add - TypeError: CliRunner.__i...
+ERROR tests/test_cli_projects.py::test_project_add_with_parent - TypeError: C...
+ERROR tests/test_cli_projects.py::test_project_list - TypeError: CliRunner.__...
+ERROR tests/test_cli_projects.py::test_project_edit_name - TypeError: CliRunn...
+ERROR tests/test_cli_projects.py::test_project_delete - TypeError: CliRunner....
+ERROR tests/test_cli_reports.py::test_report_generate_day - TypeError: CliRun...
+ERROR tests/test_cli_reports.py::test_report_generate_project_grouping - Type...
+ERROR tests/test_cli_reports.py::test_report_generate_timezone_aware - TypeEr...
+ERROR tests/test_cli_reports.py::test_report_generate_no_data - TypeError: Cl...
+ERROR tests/test_cli_time_entries.py::test_logs_all - TypeError: CliRunner.__...
+ERROR tests/test_cli_time_entries.py::test_logs_output_timezone_aware - TypeE...
+ERROR tests/test_cli_time_entries.py::test_logs_date_filter_timezone_aware - ...
+ERROR tests/test_cli_time_entries.py::test_logs_filter_date - TypeError: CliR...
+ERROR tests/test_cli_time_entries.py::test_logs_filter_project - TypeError: C...
+ERROR tests/test_cli_time_entries.py::test_adjust_entry - TypeError: CliRunne...
+ERROR tests/test_cli_time_entries.py::test_adjust_entry_timezone_aware - Type...
+ERROR tests/test_cli_time_entries.py::test_delete_entry - TypeError: CliRunne...
+ERROR tests/test_cli_time_entries.py::test_show_all_head - TypeError: CliRunn...
+ERROR tests/test_cli_time_entries.py::test_show_all_tail - TypeError: CliRunn...
+ERROR tests/test_cli_time_entries.py::test_show_all_head_and_tail_error - Typ...
+======================== 7 passed, 38 errors in 1.38s =========================

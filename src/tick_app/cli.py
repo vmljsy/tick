@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, UTC
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 
-from .database import init_db, get_db
+from .database import get_db_manager, get_db
 from .services import time_entry_service, project_service
 from .utils import format_duration, parse_duration_string, convert_utc_to_local, convert_local_to_utc, get_current_datetime, parse_date_string
 from .cli_time_entries import app as entry_app
@@ -49,7 +49,7 @@ def callback():
     """
     Tick: A command-line time tracking tool.
     """
-    init_db()
+    get_db_manager().init_db()
 
 @app.command("start")
 def start_timer(

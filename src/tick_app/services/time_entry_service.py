@@ -8,11 +8,20 @@ from ..profiling import profile_time
 
 @profile_time
 def start_timer(db: Session, project_id: int, description: Optional[str] = None, tags: List[str] = []) -> models.TimeEntry:
-    # TODO: Handle tags
+    from .tag_service import get_tag_by_name, create_tag
+    
+    db_tags = []
+    for tag_name in tags:
+        tag = get_tag_by_name(db, tag_name)
+        if not tag:
+            tag = create_tag(db, tag_name)
+        db_tags.append(tag)
+
     db_time_entry = models.TimeEntry(
         project_id=project_id,
         description=description,
-        start_time=datetime.now(UTC)
+        start_time=datetime.now(UTC),
+        tags=db_tags
     )
     db.add(db_time_entry)
     db.commit()
@@ -34,12 +43,21 @@ def stop_timer(db: Session, entry_id: Optional[int] = None) -> Optional[models.T
 
 @profile_time
 def log_time(db: Session, project_id: int, start_time: datetime, end_time: datetime, description: Optional[str] = None, tags: List[str] = []) -> models.TimeEntry:
-    # TODO: Handle tags
+    from .tag_service import get_tag_by_name, create_tag
+
+    db_tags = []
+    for tag_name in tags:
+        tag = get_tag_by_name(db, tag_name)
+        if not tag:
+            tag = create_tag(db, tag_name)
+        db_tags.append(tag)
+
     db_time_entry = models.TimeEntry(
         project_id=project_id,
         start_time=start_time,
         end_time=end_time,
-        description=description
+        description=description,
+        tags=db_tags
     )
     db.add(db_time_entry)
     db.commit()

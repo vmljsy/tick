@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, UTC
 import pytz
 
-from src.tick_app.config import get_user_timezone
+from .config import get_user_timezone
 
 class ProjectNotFound(Exception):
     pass

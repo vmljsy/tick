@@ -111,16 +111,19 @@ def list_logs(
     table.add_column("ID", style="cyan")
     table.add_column("Project")
     table.add_column("Description")
+    table.add_column("Tags", style="blue")
     table.add_column("Start Time", style="magenta")
     table.add_column("End Time", style="magenta")
     table.add_column("Duration", style="green")
 
     for entry in entries:
         duration = (entry.end_time - entry.start_time).total_seconds() if entry.end_time else 0
+        tags_str = ", ".join([tag.name for tag in entry.tags])
         table.add_row(
             str(entry.id),
             entry.project.name,
             entry.description or "",
+            tags_str,
             convert_utc_to_local(entry.start_time).strftime("%Y-%m-%d %H:%M"),
             convert_utc_to_local(entry.end_time).strftime("%Y-%m-%d %H:%M") if entry.end_time else "Running...",
             format_duration(duration),
