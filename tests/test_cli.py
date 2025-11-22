@@ -28,11 +28,17 @@ def test_start_timer_existing_project(cli_runner: CliRunner, db_session):
     assert result.exit_code == 0
     assert "Timer started for project 'ExistingProject'" in result.stdout.strip()
 
-def test_start_timer_already_running(cli_runner: CliRunner, db_session):
+def test_start_timer_already_running(cli_runner: CliRunner, db_session, monkeypatch):
+    from unittest.mock import MagicMock
     project_service.create_project(db_session, "ProjectA")
     project_service.create_project(db_session, "ProjectB")
     cli_runner.invoke(app, ["start", "ProjectA"])
-    result = cli_runner.invoke(app, ["start", "ProjectB"], input="n\n") # Decline to stop
+    
+    # Mock confirm to return False (decline to stop)
+    mock_confirm = MagicMock(return_value=MagicMock(execute=MagicMock(return_value=False)))
+    monkeypatch.setattr("InquirerPy.inquirer.confirm", mock_confirm)
+    
+    result = cli_runner.invoke(app, ["start", "ProjectB"]) # Input is ignored by mock
     assert result.exit_code == 1
     assert "A timer is already running for project 'ProjectA'" in result.stdout.strip()
     assert "Operation cancelled." in result.stdout.strip()
@@ -103,7 +109,7 @@ def test_config_set_and_get_timezone(cli_runner: CliRunner, db_session):
     # Get the timezone
     result = cli_runner.invoke(app, ["config", "get", "timezone"])
     assert result.exit_code == 0
-    assert "Configuration key 'timezone': 'America/New_York'." in result.stdout
+    assert "timezone = America/New_York" in result.stdout
 
     # Reset to default (or another timezone)
     result = cli_runner.invoke(app, ["config", "set", "timezone", "UTC"])
@@ -225,7 +231,7 @@ def test_cli_commands_run_without_error(cli_runner: CliRunner, db_session):
     # Test config get
     result = cli_runner.invoke(app, ["config", "get", "test_key"])
     assert result.exit_code == 0, f"config get failed: {result.stdout}"
-    assert "Configuration key 'test_key': 'test_value'." in result.stdout
+    assert "test_key = test_value" in result.stdout
 
     # Test config list
     result = cli_runner.invoke(app, ["config", "list"])

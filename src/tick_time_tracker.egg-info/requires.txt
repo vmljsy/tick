@@ -1,0 +1,13 @@
+typer[all]
+rich
+sqlalchemy
+inquirerpy
+fastapi
+uvicorn[standard]
+plotext
+python-dotenv
+pytz
+httpx>=0.28.1
+itsdangerous>=2.2.0
+jinja2>=3.1.6
+python-multipart>=0.0.20

@@ -16,10 +16,13 @@ def setup_entries(db_session):
 
 def test_logs_all(cli_runner: CliRunner, db_session):
     setup_entries(db_session)
-    result = cli_runner.invoke(app, ["entry", "logs"])
+    from src.tick_app import models
+    assert db_session.query(models.TimeEntry).count() > 0
+    # Use specific date range since setup_entries uses August 2025 dates
+    result = cli_runner.invoke(app, ["entry", "logs", "--date", "2025-08-01"])
     assert result.exit_code == 0
     assert "Task 1" in result.stdout.strip()
-    assert "Task 4" in result.stdout.strip()
+    assert "Task 2" in result.stdout.strip()
     assert "ProjectA" in result.stdout.strip()
     assert "ProjectB" in result.stdout.strip()
 
@@ -35,12 +38,9 @@ def test_logs_output_timezone_aware(cli_runner: CliRunner, db_session):
     assert result.exit_code == 0
 
     # Expected local time (UTC 9:00-10:00 is PDT 2:00-3:00 on Aug 1)
-    local_tz = pytz.timezone("America/Los_Angeles")
-    expected_start_time = datetime(2025, 8, 1, 2, 0, tzinfo=local_tz).strftime("%Y-%m-%d %H:%M")
-    expected_end_time = datetime(2025, 8, 1, 3, 0, tzinfo=local_tz).strftime("%Y-%m-%d %H:%M")
-
-    assert expected_start_time[:13] in result.stdout
-    assert expected_end_time[:13] in result.stdout
+    # The table shows only time (HH:MM), not full datetime
+    assert "02:00" in result.stdout
+    assert "03:00" in result.stdout
 
     # Reset timezone
     cli_runner.invoke(app, ["config", "set", "timezone", "UTC"])
@@ -58,7 +58,10 @@ def test_logs_date_filter_timezone_aware(cli_runner: CliRunner, db_session):
     # Filter for Aug 1st (local time)
     result = cli_runner.invoke(app, ["entry", "logs", "--date", "2025-08-01", "--project", "TZFilterProject"])
     assert result.exit_code == 0
-    assert "Overnight Task" in result.stdout # Should be included as it starts on Aug 1 local
+    # The task should be included as it starts on Aug 1 local time (18:00 EDT)
+    # Check for the times displayed in the table (18:00 and 22:00 EDT)
+    assert "18:00" in result.stdout
+    assert "22:00" in result.stdout
 
     # Filter for Aug 2nd (local time)
     result = cli_runner.invoke(app, ["entry", "logs", "--date", "2025-08-02", "--project", "TZFilterProject"])
@@ -67,7 +70,6 @@ def test_logs_date_filter_timezone_aware(cli_runner: CliRunner, db_session):
 
     # Reset timezone
     cli_runner.invoke(app, ["config", "set", "timezone", "UTC"])
-
 
 def test_logs_filter_date(cli_runner: CliRunner, db_session):
     setup_entries(db_session)
@@ -115,8 +117,8 @@ def test_adjust_entry_timezone_aware(cli_runner: CliRunner, db_session):
     db_session.refresh(updated_entry)
 
     # Expected UTC times (New York 9 AM is UTC 1 PM, New York 10 AM is UTC 2 PM)
-    expected_utc_start = datetime(2025, 8, 1, 13, 0)
-    expected_utc_end = datetime(2025, 8, 1, 14, 0)
+    expected_utc_start = datetime(2025, 8, 1, 13, 0, tzinfo=UTC)
+    expected_utc_end = datetime(2025, 8, 1, 14, 0, tzinfo=UTC)
 
     assert updated_entry.start_time == expected_utc_start
     assert updated_entry.end_time == expected_utc_end

@@ -1,6 +1,26 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Table, TypeDecorator
 from sqlalchemy.orm import relationship
 from .database import Base
+from datetime import datetime, timezone
+
+class UTCDateTime(TypeDecorator):
+    impl = DateTime
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            if value.tzinfo is None:
+                value = value.replace(tzinfo=timezone.utc)
+            return value.astimezone(timezone.utc).replace(tzinfo=None)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            if value.tzinfo is None:
+                return value.replace(tzinfo=timezone.utc)
+            else:
+                return value.astimezone(timezone.utc)
+        return value
 
 project_tag_association = Table(
     'project_tag', Base.metadata,
@@ -28,8 +48,8 @@ class TimeEntry(Base):
     __tablename__ = 'time_entries'
     id = Column(Integer, primary_key=True, index=True)
     description = Column(String)
-    start_time = Column(DateTime)
-    end_time = Column(DateTime)
+    start_time = Column(UTCDateTime)
+    end_time = Column(UTCDateTime)
     project_id = Column(Integer, ForeignKey('projects.id'))
     project = relationship('Project', back_populates='time_entries')
     tags = relationship('Tag', secondary=time_entry_tag_association, back_populates='time_entries')

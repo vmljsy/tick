@@ -26,7 +26,7 @@ def test_config_set_get_list_delete(cli_runner: CliRunner, monkeypatch):
     # Test get command
     result = cli_runner.invoke(app, ["config", "get", "timezone"])
     assert result.exit_code == 0
-    assert "Configuration key 'timezone': 'America/New_York'." in result.stdout.strip()
+    assert "timezone = America/New_York" in result.stdout.strip()
 
     # Test list command
     result = cli_runner.invoke(app, ["config", "list"])

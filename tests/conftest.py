@@ -1,6 +1,7 @@
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from unittest.mock import MagicMock, patch
 
 from src.tick_app.database import Base, get_db_manager, DatabaseManager
@@ -20,6 +21,14 @@ def db_session_fixture(monkeypatch, reset_db_manager):
 
     # Create a test database manager
     test_manager = DatabaseManager(test_db_url)
+    
+    # Re-create engine with StaticPool for in-memory DB
+    test_manager.engine = create_engine(
+        test_db_url, 
+        connect_args={"check_same_thread": False}, 
+        poolclass=StaticPool
+    )
+    test_manager.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_manager.engine)
     
     # Create tables
     test_manager.init_db()
