@@ -1,0 +1,47 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.1, pluggy-1.6.0
+rootdir: C:\Users\vimal\OneDrive\Documents\tick
+configfile: pytest.ini
+plugins: anyio-4.11.0
+collected 66 items
+
+tests\services\test_integration.py .............                         [ 19%]
+tests\services\test_project_service.py .                                 [ 21%]
+tests\services\test_tag_service.py .                                     [ 22%]
+tests\services\test_time_entry_service.py .                              [ 24%]
+tests\test_api.py ........                                               [ 36%]
+tests\test_cli.py .F
+
+================================== FAILURES ===================================
+________________________ test_start_timer_new_project _________________________
+tests\test_cli.py:16: in test_start_timer_new_project
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result SystemExit(1)>.exit_code
+============================== warnings summary ===============================
+api\schemas.py:5
+  C:\Users\vimal\OneDrive\Documents\tick\api\schemas.py:5: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class Tag(BaseModel):
+
+.venv\Lib\site-packages\pydantic\_internal\_config.py:383
+  C:\Users\vimal\OneDrive\Documents\tick\.venv\Lib\site-packages\pydantic\_internal\_config.py:383: UserWarning: Valid config keys have changed in V2:
+  * 'orm_mode' has been renamed to 'from_attributes'
+    warnings.warn(message, UserWarning)
+
+api\schemas.py:12
+  C:\Users\vimal\OneDrive\Documents\tick\api\schemas.py:12: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class Project(BaseModel):
+
+api\schemas.py:21
+  C:\Users\vimal\OneDrive\Documents\tick\api\schemas.py:21: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class TimeEntry(BaseModel):
+
+tests/test_api.py::test_update_project
+  C:\Users\vimal\OneDrive\Documents\tick\api\routers\api.py:43: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    update_data = project_update.dict(exclude_unset=True)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_cli.py::test_start_timer_new_project - assert 1 == 0
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+================== 1 failed, 25 passed, 5 warnings in 2.46s ===================

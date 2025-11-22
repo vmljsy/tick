@@ -7,7 +7,9 @@ from InquirerPy.base.control import Choice
 
 from .database import get_db_manager, get_db
 from .services import time_entry_service, project_service
-from .utils import format_duration, parse_duration_string, convert_utc_to_local, convert_local_to_utc, get_current_datetime, parse_date_string
+from .utils import (format_duration, parse_duration_string, convert_utc_to_local, 
+                    convert_local_to_utc, get_current_datetime, parse_date_string,
+                    prompt_for_project, get_project_by_id_or_name)
 from .cli_time_entries import app as entry_app
 from .cli_projects import app as project_app
 from .cli_reports import app as report_app
@@ -21,28 +23,6 @@ app.add_typer(report_app, name="report")
 app.add_typer(config_app, name="config")
 app.add_typer(export_app, name="export")
 console = Console()
-
-CREATE_NEW_PROJECT_CHOICE = Choice(value=None, name="[Create New Project]")
-
-def _prompt_for_project(db):
-    projects = project_service.list_projects(db)
-    choices = [Choice(value=p.id, name=p.name) for p in projects]
-    choices.append(CREATE_NEW_PROJECT_CHOICE)
-
-    project_id = inquirer.select(
-        message="Select a project:",
-        choices=choices,
-        default=None,
-    ).execute()
-
-    if project_id is None: # Create new project
-        new_project_name = inquirer.text(message="Enter the name for the new project:").execute()
-        if not new_project_name:
-            console.print("[bold red]Error:[/bold red] Project name cannot be empty.")
-            raise typer.Exit(1)
-        return project_service.create_project(db, new_project_name)
-    else:
-        return project_service.get_project_by_id(db, project_id)
 
 @app.callback()
 def callback():
@@ -71,7 +51,7 @@ def start_timer(
             else:
                 raise typer.Exit(code=1)
     else:
-        project = _prompt_for_project(db)
+        project = prompt_for_project(db, allow_create=True)
 
     running_entry = time_entry_service.get_current_running_entry(db)
     if running_entry:
@@ -142,7 +122,7 @@ def log_time(
             else:
                 raise typer.Exit(code=1)
     else:
-        project = _prompt_for_project(db)
+        project = prompt_for_project(db, allow_create=True)
 
     if duration and (start or end):
         console.print("[bold red]Error:[/bold red] Cannot use --duration with --start or --end.")
