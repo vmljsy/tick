@@ -3,9 +3,7 @@ from rich.console import Console
 from rich.table import Table
 from typing import Optional
 from datetime import datetime, timedelta, UTC
-import plotext as plt
 
-from .database import get_db
 from .services import time_entry_service, project_service, tag_service
 from .utils import get_start_of_day, get_start_of_week, get_start_of_month, parse_date_string, format_duration, convert_utc_to_local, get_current_datetime, convert_local_to_utc
 
@@ -37,6 +35,8 @@ def generate_report(
     """
     Generates a time tracking report.
     """
+    from .database import get_db
+
     db = next(get_db())
     now_utc = get_current_datetime() # This is already UTC
     now_local = convert_utc_to_local(now_utc) # Get current time in local timezone
@@ -101,6 +101,7 @@ def generate_report(
 
     # Generate and display graph if requested
     if graph:
+        import plotext as plt
         labels = []
         values = []
         for row in report_data:

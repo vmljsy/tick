@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 import csv
 import json
 
-from .database import get_db
 from .services import time_entry_service, project_service
 from .utils import format_duration, parse_date_string, get_start_of_day, get_start_of_week, get_start_of_month, convert_utc_to_local, get_current_datetime, convert_local_to_utc
 
@@ -45,6 +44,8 @@ def export_entries(
     """
     Exports raw time entries.
     """
+    from .database import get_db
+
     db = next(get_db())
     start_date, end_date = None, None
     now_utc = get_current_datetime()
@@ -138,6 +139,8 @@ def export_projects(
     """
     Exports project list.
     """
+    from .database import get_db
+
     db = next(get_db())
     projects = project_service.list_projects(db, include_archived=archived)
 
@@ -196,6 +199,8 @@ def export_report(
     """
     Exports a time tracking report.
     """
+    from .database import get_db
+
     db = next(get_db())
     now_utc = get_current_datetime()
     now_local = convert_utc_to_local(now_utc)
