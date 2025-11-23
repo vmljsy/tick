@@ -19,3 +19,7 @@ DEFAULT_TIMEZONE = "UTC"
 def get_user_timezone() -> str:
     from .services.config_service import config_service
     return config_service.get("timezone", DEFAULT_TIMEZONE)
+
+def get_config_value(key: str, default: Optional[str] = None) -> Optional[str]:
+    from .services.config_service import config_service
+    return config_service.get(key, default)

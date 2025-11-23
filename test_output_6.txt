@@ -1,0 +1,10 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.1, pluggy-1.6.0
+rootdir: C:\Users\vimal\OneDrive\Documents\tick
+configfile: pytest.ini
+plugins: anyio-4.11.0
+collected 4 items
+
+tests\test_cli_web.py ....                                               [100%]
+
+============================== 4 passed in 0.79s ==============================

@@ -3,14 +3,12 @@ from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
-from src.tick_app.database import get_db
-from src.tick_app.services import project_service, time_entry_service, config_service
-from src.tick_app.utils import parse_duration_string
+from tick_app.database import get_db
+from tick_app.services import project_service, time_entry_service, config_service
+from tick_app.utils import parse_duration_string
 from .. import schemas
 
 router = APIRouter()
-
-# --- Projects ---
 
 @router.get("/projects", response_model=List[schemas.Project])
 def list_projects(

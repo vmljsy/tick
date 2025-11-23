@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Reports</h2>
+    </div>
+
+    <form action="/reports/generate" method="post" class="mb-4">
+        <div class="grid grid-cols-1" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+            <div class="form-group">
+                <label for="period" class="form-label">Quick Select</label>
+                <select class="form-select form-control" id="period" name="period">
+                    <option value="">Custom</option>
+                    <option value="day" {% if selected_period=='day' %}selected{% endif %}>Today</option>
+                    <option value="week" {% if selected_period=='week' %}selected{% endif %}>This Week</option>
+                    <option value="month" {% if selected_period=='month' %}selected{% endif %}>This Month</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="start_date" class="form-label">Start Date</label>
+                <input type="date" class="form-control" id="start_date" name="start_date">
+            </div>
+
+            <div class="form-group">
+                <label for="end_date" class="form-label">End Date</label>
+                <input type="date" class="form-control" id="end_date" name="end_date">
+            </div>
+
+            <div class="form-group">
+                <label for="project_id" class="form-label">Project (Optional)</label>
+                <select class="form-select form-control" id="project_id" name="project_id">
+                    <option value="">All Projects</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}" {% if selected_project_id==project.id %}selected{% endif %}>{{
+                        project.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="group_by" class="form-label">Group By</label>
+                <select class="form-select form-control" id="group_by" name="group_by">
+                    <option value="project" {% if group_by=='project' %}selected{% endif %}>Project</option>
+                    <option value="day" {% if group_by=='day' %}selected{% endif %}>Day</option>
+                    <option value="tag" {% if group_by=='tag' %}selected{% endif %}>Tag</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            Generate Report
+        </button>
+    </form>
+
+    {% if report_data %}
+    <!-- Chart Visualization Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="card-title">Visual Analysis - Grouped by {{ group_by.capitalize() }}</h3>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="toggleChartType" class="btn btn-secondary btn-sm">
+                        Switch to Bar Chart
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div style="padding: 2rem;">
+            <div style="max-width: 600px; margin: 0 auto; position: relative;">
+                <canvas id="reportChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Results (Grouped by {{ group_by.capitalize() }})</h3>
+        </div>
+
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>{{ group_by.capitalize() }}</th>
+                        <th>Total Time</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set total_time = report_data | sum(attribute='total_duration') %}
+                    {% for row in report_data %}
+                    <tr>
+                        <td>
+                            <span class="text-primary">
+                                {% if group_by == 'day' %}
+                                {{ convert_utc_to_local(row.group_key).strftime('%Y-%m-%d') if row.group_key else
+                                'Unknown' }}
+                                {% else %}
+                                {{ row.group_key or 'Unknown' }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td class="font-mono">{{ format_duration(row.total_duration) }}</td>
+                        <td>
+                            {% set percentage = (row.total_duration / total_time * 100) if total_time > 0 else 0 %}
+                            <div class="flex items-center gap-2">
+                                <div
+                                    style="width: 100px; height: 8px; background-color: var(--bg-input); border-radius: 4px; overflow: hidden;">
+                                    <div
+                                        style="width: {{ percentage }}%; height: 100%; background-color: var(--accent-primary);">
+                                    </div>
+                                </div>
+                                <span class="text-muted">{{ "%.1f" | format(percentage) }}%</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <tr style="border-top: 2px solid var(--border-color);">
+                        <td><strong>Total</strong></td>
+                        <td class="font-mono"><strong>{{ format_duration(total_time) }}</strong></td>
+                        <td><strong>100%</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Chart.js Script -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        const chartData = {{ chart_data | safe }};
+
+        // Only render chart if we have data
+        if (chartData && chartData.labels && chartData.labels.length > 0) {
+            const ctx = document.getElementById('reportChart').getContext('2d');
+
+            // Generate colors for the chart
+            const colors = [
+                '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981',
+                '#06b6d4', '#6366f1', '#84cc16', '#f97316', '#14b8a6'
+            ];
+
+            const backgroundColors = chartData.labels.map((_, i) => colors[i % colors.length]);
+
+            let currentChartType = 'pie';
+            let chart;
+
+            function createChart(type) {
+                if (chart) {
+                    chart.destroy();
+                }
+
+                const config = {
+                    type: type,
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [{
+                            label: 'Hours',
+                            data: chartData.values,
+                            backgroundColor: backgroundColors,
+                            borderColor: '#1e1e1e',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                display: type === 'pie',
+                                position: 'bottom',
+                                labels: {
+                                    color: '#e0e0e0',
+                                    padding: 15,
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        const hours = context.parsed || context.parsed.y || 0;
+                                        const totalHours = chartData.values.reduce((a, b) => a + b, 0);
+                                        const percentage = totalHours > 0 ? ((hours / totalHours) * 100).toFixed(1) : 0;
+                                        return `${context.label}: ${hours}h (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: type === 'bar' ? {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: '#e0e0e0',
+                                    callback: function (value) {
+                                        return value + 'h';
+                                    }
+                                },
+                                grid: {
+                                    color: '#333'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: '#e0e0e0'
+                                },
+                                grid: {
+                                    color: '#333'
+                                }
+                            }
+                        } : {}
+                    }
+                };
+
+                chart = new Chart(ctx, config);
+            }
+
+            // Initialize with pie chart
+            createChart('pie');
+
+            // Toggle button handler
+            document.getElementById('toggleChartType').addEventListener('click', function () {
+                currentChartType = currentChartType === 'pie' ? 'bar' : 'pie';
+                createChart(currentChartType);
+                this.textContent = currentChartType === 'pie' ? 'Switch to Bar Chart' : 'Switch to Pie Chart';
+            });
+        } else {
+            // Hide chart section if no data
+            document.querySelector('.card.mb-4').style.display = 'none';
+        }
+    </script>
+    {% endif %}
+</div>
+{% endblock %}

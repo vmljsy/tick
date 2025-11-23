@@ -43,4 +43,4 @@ def get_db():
     if _db_manager is None:
         # Fallback or default initialization
         get_db_manager()
-    return _db_manager.get_db()
+    yield from _db_manager.get_db()

@@ -8,12 +8,20 @@ src/tick_app/cli_export.py
 src/tick_app/cli_projects.py
 src/tick_app/cli_reports.py
 src/tick_app/cli_time_entries.py
+src/tick_app/cli_web.py
 src/tick_app/config.py
 src/tick_app/database.py
 src/tick_app/models.py
 src/tick_app/profiling.py
 src/tick_app/schemas.py
 src/tick_app/utils.py
+src/tick_app/api/templates/add_project.html
+src/tick_app/api/templates/base.html
+src/tick_app/api/templates/edit_project.html
+src/tick_app/api/templates/index.html
+src/tick_app/api/templates/logs.html
+src/tick_app/api/templates/projects.html
+src/tick_app/api/templates/reports.html
 src/tick_time_tracker.egg-info/PKG-INFO
 src/tick_time_tracker.egg-info/SOURCES.txt
 src/tick_time_tracker.egg-info/dependency_links.txt
@@ -26,5 +34,6 @@ tests/test_cli_config.py
 tests/test_cli_projects.py
 tests/test_cli_reports.py
 tests/test_cli_time_entries.py
+tests/test_cli_web.py
 tests/test_models.py
 tests/test_utils.py

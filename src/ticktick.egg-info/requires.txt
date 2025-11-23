@@ -1,9 +1,0 @@
-typer[all]
-rich
-sqlalchemy
-inquirerpy
-fastapi
-uvicorn[standard]
-plotext
-python-dotenv
-pytz

@@ -1,0 +1,26 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.1, pluggy-1.6.0
+rootdir: C:\Users\vimal\OneDrive\Documents\tick
+configfile: pytest.ini
+plugins: anyio-4.11.0
+collected 0 items / 1 error
+
+=================================== ERRORS ====================================
+___________________ ERROR collecting tests/test_cli_web.py ____________________
+ImportError while importing test module 'C:\Users\vimal\OneDrive\Documents\tick\tests\test_cli_web.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+..\..\..\AppData\Roaming\uv\python\cpython-3.13.9-windows-x86_64-none\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_cli_web.py:4: in <module>
+    from tick_app.cli import app
+src\tick_app\cli.py:18: in <module>
+    from .cli_web import app as web_app
+src\tick_app\cli_web.py:7: in <module>
+    from .config import get_config_value
+E   ImportError: cannot import name 'get_config_value' from 'tick_app.config' (C:\Users\vimal\OneDrive\Documents\tick\src\tick_app\config.py)
+=========================== short test summary info ===========================
+ERROR tests/test_cli_web.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+============================== 1 error in 0.90s ===============================

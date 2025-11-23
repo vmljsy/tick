@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <div class="card-header">
+        <h2 class="card-title">Edit Time Entry</h2>
+    </div>
+
+    <form action="/entries/edit/{{ entry.id }}" method="post">
+        <div class="form-group">
+            <label class="form-label">Project</label>
+            <input type="text" class="form-control" value="{{ entry.project.name }}" disabled>
+        </div>
+
+        <div class="form-group">
+            <label for="description" class="form-label">Description</label>
+            <input type="text" class="form-control" id="description" name="description"
+                value="{{ entry.description or '' }}" placeholder="What did you work on?">
+        </div>
+
+        <div class="form-group">
+            <label for="start_time" class="form-label">Start Time</label>
+            <input type="datetime-local" class="form-control" id="start_time" name="start_time"
+                value="{{ convert_utc_to_local(entry.start_time).strftime('%Y-%m-%dT%H:%M') }}">
+        </div>
+
+        {% if entry.end_time %}
+        <div class="form-group">
+            <label for="end_time" class="form-label">End Time</label>
+            <input type="datetime-local" class="form-control" id="end_time" name="end_time"
+                value="{{ convert_utc_to_local(entry.end_time).strftime('%Y-%m-%dT%H:%M') }}">
+        </div>
+        {% endif %}
+
+        <div class="flex gap-2">
+            <a href="/logs" class="btn btn-secondary" style="flex: 1;">Cancel</a>
+            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Save Changes
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

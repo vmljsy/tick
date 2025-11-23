@@ -53,4 +53,4 @@ packages = ["tick_app"]
 package-dir = {"" = "src"}
 
 [tool.setuptools.package-data]
-tick_app = ["*.json"]
+tick_app = ["*.json", "api/static/**/*", "api/templates/**/*"]

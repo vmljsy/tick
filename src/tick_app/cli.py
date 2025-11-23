@@ -15,21 +15,28 @@ from .cli_projects import app as project_app
 from .cli_reports import app as report_app
 from .cli_config import app as config_app
 from .cli_export import app as export_app
+from .cli_web import app as web_app
 
-app = typer.Typer(rich_markup_mode="markdown")
-app.add_typer(entry_app, name="entry")
-app.add_typer(project_app, name="project")
-app.add_typer(report_app, name="report")
-app.add_typer(config_app, name="config")
-app.add_typer(export_app, name="export")
+app = typer.Typer(rich_markup_mode="markdown", no_args_is_help=True)
+app.add_typer(entry_app, name="entry" , help="Time entry commands.", no_args_is_help=True)
+app.add_typer(project_app, name="project" , help="Project commands.", no_args_is_help=True)
+app.add_typer(report_app, name="report" , help="Report commands.", no_args_is_help=True)
+app.add_typer(config_app, name="config" , help="Configuration commands.", no_args_is_help=True)
+app.add_typer(export_app, name="export" , help="Export commands.", no_args_is_help=True)
+app.add_typer(web_app, name="web", help="Web interface commands.", no_args_is_help=True)
 console = Console()
 
-@app.callback()
-def callback():
+
+@app.callback(invoke_without_command=True)
+def callback(ctx: typer.Context):
     """
     Tick: A command-line time tracking tool.
     """
     get_db_manager().init_db()
+    if ctx.invoked_subcommand is None:
+        console.print(ctx.get_help())
+
+
 
 @app.command("start")
 def start_timer(

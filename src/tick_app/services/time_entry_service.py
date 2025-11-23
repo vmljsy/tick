@@ -90,8 +90,20 @@ def get_time_entry_by_id(db: Session, entry_id: int) -> Optional[models.TimeEntr
 
 @profile_time
 def update_time_entry(db: Session, entry_id: int, **kwargs) -> Optional[models.TimeEntry]:
+    from .tag_service import get_tag_by_name, create_tag
+    
     db_time_entry = get_time_entry_by_id(db, entry_id)
     if db_time_entry:
+        if "tags" in kwargs:
+            tags = kwargs.pop("tags")
+            db_tags = []
+            for tag_name in tags:
+                tag = get_tag_by_name(db, tag_name)
+                if not tag:
+                    tag = create_tag(db, tag_name)
+                db_tags.append(tag)
+            db_time_entry.tags = db_tags
+
         for key, value in kwargs.items():
             setattr(db_time_entry, key, value)
         db.add(db_time_entry) # Ensure the object is in the session and tracked for changes

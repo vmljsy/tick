@@ -113,14 +113,15 @@ def list_entries(
     
     console.print(table)
 
-
-@app.command("adjust")
+@app.command("adjust", no_args_is_help=True , short_help="Adjust a time entry with given options and --entry_id .")
+@app.command("edit" , short_help="Edit a time entry interactively.")
 def adjust_entry(
     entry_id: Optional[int] = typer.Argument(None, help="The ID of the time entry to adjust."),
     duration: Optional[str] = typer.Option(None, "--duration", help="New duration (e.g., '1h30m')."),
     desc: Optional[str] = typer.Option(None, "--desc", help="New description."),
     start: Optional[str] = typer.Option(None, "--start", help="New start time (YYYY-MM-DD HH:MM)."),
     end: Optional[str] = typer.Option(None, "--end", help="New end time (YYYY-MM-DD HH:MM)."),
+    tags: Optional[List[str]] = typer.Option(None, "--tag", "-t", help="New tags."),
 ):
     """
     Adjusts the details of a specific time entry.
@@ -146,11 +147,13 @@ def adjust_entry(
         updates["start_time"] = parse_date_string(start, as_local=True)
     if end:
         updates["end_time"] = parse_date_string(end, as_local=True)
+    if tags:
+        updates["tags"] = tags
 
-    if not any([duration, desc, start, end]):
+    if not any([duration, desc, start, end, tags]):
         field_to_edit = inquirer.select(
             message="Which field do you want to edit?",
-            choices=["Description", "Duration", "Start Time", "End Time"],
+            choices=["Description", "Duration", "Start Time", "End Time", "Tags"],
         ).execute()
 
         if field_to_edit == "Description":
@@ -166,6 +169,10 @@ def adjust_entry(
         elif field_to_edit == "End Time":
             new_end_str = inquirer.text(message="Enter new end time (YYYY-MM-DD HH:MM):", default=convert_utc_to_local(entry.end_time).strftime("%Y-%m-%d %H:%M")).execute()
             updates["end_time"] = parse_date_string(new_end_str, as_local=True)
+        elif field_to_edit == "Tags":
+            current_tags = ", ".join([tag.name for tag in entry.tags])
+            new_tags_str = inquirer.text(message="Enter new tags (comma separated):", default=current_tags).execute()
+            updates["tags"] = [tag.strip() for tag in new_tags_str.split(",") if tag.strip()]
 
     if not updates:
         console.print("No changes made.")

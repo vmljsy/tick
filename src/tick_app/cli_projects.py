@@ -9,10 +9,11 @@ from .database import get_db
 from .services import project_service, tag_service
 from .utils import prompt_for_project, get_project_by_id_or_name
 
-app = typer.Typer(rich_markup_mode="markdown", name="project")
+app = typer.Typer(rich_markup_mode="markdown", name="project", no_args_is_help=True )
 console = Console()
 
-@app.command("list")
+
+@app.command("list" , )
 def list_projects(
     archived: bool = typer.Option(False, "--archived", help="Include archived projects."),
 ):
