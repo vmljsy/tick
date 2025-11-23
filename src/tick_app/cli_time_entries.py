@@ -4,15 +4,6 @@ from rich.table import Table
 from typing import Optional, List
 from datetime import datetime, timedelta
 
-from InquirerPy import inquirer
-from InquirerPy.base.control import Choice
-
-from .database import get_db
-from .services import time_entry_service, project_service, tag_service
-from .utils import (format_duration, parse_duration_string, get_start_of_day, get_start_of_week, 
-                    get_start_of_month, parse_date_string, convert_utc_to_local, get_current_datetime, 
-                    convert_local_to_utc, prompt_for_entry_selection)
-
 app = typer.Typer(rich_markup_mode="markdown", name="entry")
 console = Console()
 
@@ -32,6 +23,12 @@ def list_entries(
     """
     Lists time entries. Defaults to today's entries if no filters are specified.
     """
+    from .services import time_entry_service, project_service, tag_service
+    from .utils import (format_duration, get_start_of_day, get_start_of_week, 
+                        get_start_of_month, parse_date_string, convert_utc_to_local, get_current_datetime, 
+                        convert_local_to_utc)
+    from .database import get_db
+
     db = next(get_db())
     start_date, end_date = None, None
     now_utc = get_current_datetime()
@@ -125,6 +122,12 @@ def adjust_entry(
     """
     Adjusts the details of a specific time entry.
     """
+    from InquirerPy import inquirer
+    from .services import time_entry_service
+    from .utils import (format_duration, parse_duration_string, parse_date_string, convert_utc_to_local, 
+                        prompt_for_entry_selection)
+    from .database import get_db
+
     db = next(get_db())
     if entry_id is None:
         entry_id = prompt_for_entry_selection(db)
@@ -182,6 +185,11 @@ def delete_entry(
     """
     Deletes a specific time entry.
     """
+    from InquirerPy import inquirer
+    from .services import time_entry_service
+    from .utils import prompt_for_entry_selection
+    from .database import get_db
+
     db = next(get_db())
     if entry_id is None:
         entry_id = prompt_for_entry_selection(db)

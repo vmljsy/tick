@@ -1,35 +1,48 @@
 import typer
 from rich.console import Console
 from typing import Optional, List
-from datetime import datetime, timedelta, UTC
-from InquirerPy import inquirer
-from InquirerPy.base.control import Choice
+import os
 
-from .database import get_db_manager, get_db
-from .services import time_entry_service, project_service
-from .utils import (format_duration, parse_duration_string, convert_utc_to_local, 
-                    convert_local_to_utc, get_current_datetime, parse_date_string,
-                    prompt_for_project, get_project_by_id_or_name)
 from .cli_time_entries import app as entry_app
 from .cli_projects import app as project_app
 from .cli_reports import app as report_app
 from .cli_config import app as config_app
 from .cli_export import app as export_app
+from .config import DATABASE_PATH
 
-app = typer.Typer(rich_markup_mode="markdown")
-app.add_typer(entry_app, name="entry")
-app.add_typer(project_app, name="project")
-app.add_typer(report_app, name="report")
-app.add_typer(config_app, name="config")
-app.add_typer(export_app, name="export")
+app = typer.Typer(rich_markup_mode="markdown", no_args_is_help=True)
+app.add_typer(entry_app, name="entry", no_args_is_help=True)
+app.add_typer(project_app, name="project", no_args_is_help=True)
+app.add_typer(report_app, name="report", no_args_is_help=True)
+app.add_typer(config_app, name="config", no_args_is_help=True)
+app.add_typer(export_app, name="export", no_args_is_help=True)
 console = Console()
 
 @app.callback()
-def callback():
+def callback(
+    profile: bool = typer.Option(True, "--profile", hidden=True, help="Enable profiling.")
+):
     """
     Tick: A command-line time tracking tool.
     """
-    get_db_manager().init_db()
+    if profile:
+        import cProfile
+        import pstats
+        import atexit
+        
+        pr = cProfile.Profile()
+        pr.enable()
+        
+        def print_stats():
+            pr.disable()
+            ps = pstats.Stats(pr, stream=console.file).sort_stats('cumulative')
+            ps.print_stats(20)
+            
+        atexit.register(print_stats)
+
+    if not os.path.exists(DATABASE_PATH):
+        from .database import get_db_manager
+        get_db_manager().init_db()
 
 @app.command("start")
 def start_timer(
@@ -40,6 +53,11 @@ def start_timer(
     """
     Starts a new time entry for a project.
     """
+    from InquirerPy import inquirer
+    from .services import time_entry_service, project_service
+    from .utils import convert_utc_to_local, prompt_for_project
+    from .database import get_db
+
     db = next(get_db())
     
     if project_name:
@@ -71,6 +89,10 @@ def stop_timer():
     """
     Stops the currently running time entry.
     """
+    from .services import time_entry_service
+    from .utils import format_duration
+    from .database import get_db
+
     db = next(get_db())
     stopped_entry = time_entry_service.stop_timer(db)
     if not stopped_entry:
@@ -86,6 +108,10 @@ def status():
     """
     Shows the status of the current running timer.
     """
+    from .services import time_entry_service
+    from .utils import format_duration, convert_utc_to_local, get_current_datetime
+    from .database import get_db
+
     db = next(get_db())
     running_entry = time_entry_service.get_current_running_entry(db)
     if not running_entry:
@@ -111,6 +137,13 @@ def log_time(
     """
     Logs a completed time entry.
     """
+    from InquirerPy import inquirer
+    from datetime import timedelta
+    from .services import time_entry_service, project_service
+    from .utils import (format_duration, parse_duration_string, parse_date_string,
+                        prompt_for_project, get_current_datetime)
+    from .database import get_db
+
     db = next(get_db())
     
     if project_name:

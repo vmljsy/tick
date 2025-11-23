@@ -2,12 +2,6 @@ import typer
 from rich.console import Console
 from rich.table import Table
 from typing import Optional, List
-from InquirerPy import inquirer
-from InquirerPy.base.control import Choice
-
-from .database import get_db
-from .services import project_service, tag_service
-from .utils import prompt_for_project, get_project_by_id_or_name
 
 app = typer.Typer(rich_markup_mode="markdown", name="project")
 console = Console()
@@ -19,6 +13,9 @@ def list_projects(
     """
     Lists all projects.
     """
+    from .services import project_service
+    from .database import get_db
+    
     db = next(get_db())
     projects = project_service.list_projects(db, include_archived=archived)
     
@@ -46,6 +43,11 @@ def add_project(
     """
     Adds a new project.
     """
+    from InquirerPy import inquirer
+    from .services import project_service
+    from .utils import get_project_by_id_or_name
+    from .database import get_db
+
     db = next(get_db())
     if not name:
         name = inquirer.text(message="Enter the name for the new project:").execute()
@@ -70,6 +72,10 @@ def edit_project(
     """
     Edits a project's details.
     """
+    from .services import project_service
+    from .utils import prompt_for_project, get_project_by_id_or_name
+    from .database import get_db
+
     db = next(get_db())
     if not project_id_or_name:
         project = prompt_for_project(db, "Select a project to edit:")
@@ -99,6 +105,10 @@ def archive_project(
     """
     Archives a project.
     """
+    from .services import project_service
+    from .utils import prompt_for_project, get_project_by_id_or_name
+    from .database import get_db
+
     db = next(get_db())
     if not project_id_or_name:
         project = prompt_for_project(db, "Select a project to archive:")
@@ -115,6 +125,11 @@ def delete_project(
     """
     Deletes a project.
     """
+    from InquirerPy import inquirer
+    from .services import project_service
+    from .utils import prompt_for_project, get_project_by_id_or_name
+    from .database import get_db
+
     db = next(get_db())
     if not project_id_or_name:
         project = prompt_for_project(db, "Select a project to delete:")
